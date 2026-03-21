@@ -61,3 +61,24 @@ Key classes to reference when porting: `WebSearchHandler`, `_process_results`, `
 
 Config resolution: env vars > `xsearch.toml` > defaults.
 Env var naming: `XSEARCH_` prefix (e.g., `XSEARCH_DEFAULT_BACKEND`, `XSEARCH_SEARXNG_URL`, `XSEARCH_MAX_RESULT_LENGTH`).
+
+## Commit and Changelog convention
+
+Commit messages and CHANGELOG entries follow this format:
+
+```
+* YYYY-MM-DD: vX.Y.Z - <Title> (Hannibal)
+  * <type>(<scope>): <description>
+  * ...
+```
+
+Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`.
+
+Examples:
+```
+feat(query): add oversampling gap filler
+fix(cleaner): resolve BiDi regex false positive
+chore(deps): bump mcp to 1.3.0
+```
+
+Git commit messages use the same `type(scope): description` format (no version header).
