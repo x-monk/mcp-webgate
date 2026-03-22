@@ -3,7 +3,7 @@
 [![Python Version](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![MCP Protocol](https://img.shields.io/badge/MCP-Protocol-blueviolet)](https://spec.modelcontextprotocol.io/)
-[![Latest Release](https://img.shields.io/badge/release-v0.1.13-purple.svg)](https://github.com/annibale-x/mcp-webgate/releases/tag/v0.1.13)
+[![Latest Release](https://img.shields.io/badge/release-v0.1.14-purple.svg)](https://github.com/annibale-x/mcp-webgate/releases/tag/v0.1.14)
 
 Denoised web search MCP server with intelligent fetching and context flooding protection.
 
@@ -121,8 +121,7 @@ Executes one or more search queries in parallel, fetches results, cleans them, r
   "queries": ["python async httpx tutorial", "httpx asyncio guide"],
   "num_results_per_query": 5,
   "lang": "en",
-  "backend": "searxng",
-  "summarize": false
+  "backend": "searxng"
 }
 ```
 
@@ -158,7 +157,7 @@ Executes one or more search queries in parallel, fetches results, cleans them, r
 ```
 
 `snippet_pool` contains results from the oversampling reserve (search-snippet only, not fetched).
-`summary` is present only when `summarize=true` and an LLM is configured.
+`summary` is present when `llm.enabled = true` and `llm.summarization_enabled = true` in server config.
 
 ---
 
@@ -193,7 +192,7 @@ llm_rerank_enabled      = false  # LLM-assisted reranking (adds latency)
 summarizer_input_limit  = 32000  # chars of content fed to the summarizer
 ```
 
-Env vars: `WEBGATE_LLM_ENABLED`, `WEBGATE_LLM_BASE_URL`, `WEBGATE_LLM_API_KEY`, `WEBGATE_LLM_MODEL`, `WEBGATE_LLM_TIMEOUT`.
+Env vars: `WEBGATE_LLM_ENABLED`, `WEBGATE_LLM_BASE_URL`, `WEBGATE_LLM_API_KEY`, `WEBGATE_LLM_MODEL`, `WEBGATE_LLM_TIMEOUT`, `WEBGATE_LLM_EXPANSION_ENABLED`, `WEBGATE_LLM_SUMMARIZATION_ENABLED`, `WEBGATE_LLM_RERANK_ENABLED`.
 
 The `base_url` accepts any OpenAI-compatible endpoint: **OpenAI**, **Ollama**, **LM Studio**, **vLLM**, **Together AI**, **Groq**, and others.
 
@@ -216,7 +215,7 @@ Falls back silently to the original query on any LLM error.
 
 ### 📝 Summarization
 
-When `summarize=true` is passed to the `query` tool and `summarization_enabled = true`:
+Activated automatically when `llm.enabled = true` and `summarization_enabled = true` (both default when LLM is configured). No parameter needed — the model does not control this.
 
 1. The cleaned content from all fetched sources (up to `summarizer_input_limit` chars, default 32k) is sent to the external LLM
 2. The LLM produces a concise Markdown answer with inline citations `[1]`, `[2]`, etc.
@@ -432,6 +431,9 @@ summarizer_input_limit = 32000
 | `WEBGATE_LLM_API_KEY` | _(empty)_ | API key (empty for local models) |
 | `WEBGATE_LLM_MODEL` | `llama3.2` | Model name |
 | `WEBGATE_LLM_TIMEOUT` | `15.0` | LLM request timeout in seconds |
+| `WEBGATE_LLM_EXPANSION_ENABLED` | `true` | Enable automatic query expansion |
+| `WEBGATE_LLM_SUMMARIZATION_ENABLED` | `true` | Enable automatic summarization |
+| `WEBGATE_LLM_RERANK_ENABLED` | `false` | Enable LLM-assisted reranking |
 
 ---
 

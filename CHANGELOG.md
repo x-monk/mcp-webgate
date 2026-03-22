@@ -1,5 +1,9 @@
 # Changelog
 
+* 2026-03-22: v0.1.14 - TODO (Hannibal)
+  * feat(): TODO
+
+
 * 2026-03-22: v0.1.13 - Per-query debug grouping and aligned log output (Hannibal)
   * feat(logger): group fetch rows by originating query when expansion/multi-query active
   * feat(logger): fix [fail] row alignment — ms column now matches [ok] rows via fixed-width data_str
