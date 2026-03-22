@@ -1,5 +1,9 @@
 # Changelog
 
+* 2026-03-22: v0.1.1 - TODO (Hannibal)
+  * feat(): TODO
+
+
 * 2026-03-21: v0.1.0 - Initial MVP (Hannibal)
   * feat(server): MCP entry point with `fetch` and `query` tools via FastMCP
   * feat(config): Pydantic config system with env vars, xsearch.toml, and defaults
