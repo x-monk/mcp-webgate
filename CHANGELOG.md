@@ -1,5 +1,12 @@
 # Changelog
 
+* 2026-03-22: v0.1.13 - Per-query debug grouping and aligned log output (Hannibal)
+  * feat(logger): group fetch rows by originating query when expansion/multi-query active
+  * feat(logger): fix [fail] row alignment — ms column now matches [ok] rows via fixed-width data_str
+  * feat(logger): summary line now shows raw/clean/output (output=summary KB if LLM, else =clean)
+  * feat(logger): expand= timing only shown when expansion actually ran (>= 100ms threshold)
+  * feat(query): track url_to_query_idx during round-robin flatten; pass query_idx in fetch_details
+
 * 2026-03-22: v0.1.12 - Detailed debug logging and Zed config (Hannibal)
   * feat(logger): multi-line query log with timing breakdown (expand/search/fetch/total), per-URL fetch rows (raw KB → clean KB, elapsed ms), and totals summary
   * feat(fetcher): _fetch_single now returns (html, elapsed_ms, raw_bytes) tuple; fetch_urls returns (html_map, timing_map)

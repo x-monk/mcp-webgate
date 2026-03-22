@@ -3,7 +3,7 @@
 [![Python Version](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![MCP Protocol](https://img.shields.io/badge/MCP-Protocol-blueviolet)](https://spec.modelcontextprotocol.io/)
-[![Latest Release](https://img.shields.io/badge/release-v0.1.12-purple.svg)](https://github.com/annibale-x/mcp-webgate/releases/tag/v0.1.12)
+[![Latest Release](https://img.shields.io/badge/release-v0.1.13-purple.svg)](https://github.com/annibale-x/mcp-webgate/releases/tag/v0.1.13)
 
 Denoised web search MCP server with intelligent fetching and context flooding protection.
 
