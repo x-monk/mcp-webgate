@@ -1,5 +1,17 @@
 # Changelog
 
+* 2026-03-22: v0.1.7 - Phase 4 — External LLM client (Hannibal)
+  * feat(llm): LLMClient — async OpenAI-compatible /v1/chat/completions client (httpx, no SDK)
+  * feat(llm): expander.py — single-query auto-expansion to N complementary queries via LLM
+  * feat(llm): summarizer.py — Markdown summary with inline citations; receives full cleaned text (generous input_limit), max_result_length becomes output target guideline
+  * feat(utils): reranker.py — two-tier: deterministic BM25 (always active) + LLM-assisted opt-in (title+snippet+200 chars input only)
+  * feat(config): LLMConfig block — enabled, base_url, api_key, model, timeout, expansion_enabled, summarization_enabled, llm_rerank_enabled, summarizer_input_limit
+  * feat(config): XSEARCH_LLM_* env var mappings
+  * feat(query): summarize: bool parameter — appends summary field when LLM is configured
+  * refactor(query): pipeline order: search → fetch → clean → BM25 rerank → (LLM rerank) → (summarize) → output
+  * feat(server): xsearch_onboarding reports LLM feature status (enabled/disabled per feature)
+  * test(llm): test_llm.py — 21 mock-based cases: LLMClient, expander, summarizer, reranker (det. + LLM)
+
 * 2026-03-22: v0.1.6 - robot.py hardening, Phase 4 pipeline design (Hannibal)
   * chore(robot): update README release badge on bump
   * chore(robot): auto-push dev to origin after bump commit
