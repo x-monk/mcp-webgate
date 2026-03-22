@@ -1,6 +1,6 @@
 [project]
 name = "mcp-xsearch"
-version = "0.1.5"
+version = "0.1.6"
 description = "Denoised web search MCP server with context flooding protection"
 readme = "README.md"
 license = "MIT"

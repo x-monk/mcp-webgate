@@ -1,5 +1,10 @@
 # Changelog
 
+* 2026-03-22: v0.1.6 - robot.py hardening, Phase 4 pipeline design (Hannibal)
+  * chore(robot): update README release badge on bump
+  * chore(robot): auto-push dev to origin after bump commit
+  * docs(plan): Phase 4 LLM pipeline redesign — reranker two-tier (deterministic BM25 always active, LLM opt-in), summarizer receives generous input (max_result_length becomes output target), extractor moved to "Ideas to evaluate" section with cost/benefit analysis
+
 * 2026-03-22: v0.1.5 - Multi-query tool interface, onboarding tool (Hannibal)
   * feat(query): queries parameter accepts str | list[str] — model passes queries directly, no server-side LLM
   * feat(query): max_queries config cap (default 5) — silently truncates overlength lists
