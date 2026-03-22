@@ -1,5 +1,10 @@
 # Changelog
 
+* 2026-03-22: v0.1.10 - Documentation overhaul (Hannibal)
+  * docs(readme): Gentle Introduction — context flooding problem, pipeline diagram, summarization advantage with self-hosted models
+  * docs(readme): full Phase 4 LLM features section (expansion, summarization, reranking); TOC; emoji topic headers
+  * docs(contributing): updated project structure (llm/ module, utils/reranker.py, correct test files); LLM config and env vars; anti-flooding table updated with retry backoff row; release workflow reflects bump→push and README badge update; testing patterns for async context managers and MagicMock vs AsyncMock; TOC; emoji headers
+
 * 2026-03-22: v0.1.9 - Test suite warning cleanup (Hannibal)
   * fix(test_llm): proper async context manager mocking — __aenter__/__aexit__ set explicitly, no more internal coroutine leak
   * fix(test_fetcher): response objects changed from AsyncMock to MagicMock; only actually-awaited methods (aclose, send) stay AsyncMock
