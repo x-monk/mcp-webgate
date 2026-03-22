@@ -1,0 +1,17 @@
+{
+  "context_servers": {
+    "webgate": {
+      "command": "uvx",
+      "args": ["mcp-webgate"],
+      "env": {
+        "WEBGATE_DEFAULT_BACKEND": "searxng",
+        "WEBGATE_SEARXNG_URL": "http://localhost:8080",
+        "WEBGATE_LLM_ENABLED": "true",
+        "WEBGATE_LLM_BASE_URL": "http://localhost:11434/v1",
+        "WEBGATE_LLM_MODEL": "gemma3:27b",
+        "WEBGATE_DEBUG": "true",
+        "WEBGATE_LOG_FILE": "%TEMP%/webgate.log"
+      }
+    }
+  }
+}
