@@ -1,5 +1,12 @@
 # Changelog
 
+* 2026-03-22: v0.1.11 - num_results_per_query semantic (Hannibal)
+  * feat(query): rename num_results → num_results_per_query; total = per_query × num_queries bounded by max_total_results (e.g. 3 queries × 5 = 15 results)
+  * feat(query): num_results_per_query added to stats output
+  * feat(server): query tool parameter and docstring updated; onboarding updated with new param and summarize param
+  * test(query): all num_results= calls updated to num_results_per_query=
+  * docs(readme): query input/output examples updated; multi-query section clarified
+
 * 2026-03-22: v0.1.10 - Documentation overhaul (Hannibal)
   * docs(readme): Gentle Introduction — context flooding problem, pipeline diagram, summarization advantage with self-hosted models
   * docs(readme): full Phase 4 LLM features section (expansion, summarization, reranking); TOC; emoji topic headers

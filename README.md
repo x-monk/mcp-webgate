@@ -3,7 +3,7 @@
 [![Python Version](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![MCP Protocol](https://img.shields.io/badge/MCP-Protocol-blueviolet)](https://spec.modelcontextprotocol.io/)
-[![Latest Release](https://img.shields.io/badge/release-v0.1.10-purple.svg)](https://github.com/annibale-x/mcp-xsearch/releases/tag/v0.1.10)
+[![Latest Release](https://img.shields.io/badge/release-v0.1.11-purple.svg)](https://github.com/annibale-x/mcp-xsearch/releases/tag/v0.1.11)
 
 Denoised web search MCP server with intelligent fetching and context flooding protection.
 
@@ -116,14 +116,14 @@ Executes one or more search queries in parallel, fetches results, cleans them, r
 ```json
 {
   "queries": ["python async httpx tutorial", "httpx asyncio guide"],
-  "num_results": 5,
+  "num_results_per_query": 5,
   "lang": "en",
   "backend": "searxng",
   "summarize": false
 }
 ```
 
-`queries` accepts a single string or a list (up to `max_queries`, default 5). Multiple queries run in parallel and results are merged in round-robin order so no single query dominates.
+`queries` accepts a single string or a list (up to `max_queries`, default 5). Multiple queries run in parallel and results are merged in round-robin order so no single query dominates. `num_results_per_query` is per query: 3 queries × 5 = 15 total results, bounded by `max_total_results`.
 
 **Output**
 ```json
@@ -148,7 +148,8 @@ Executes one or more search queries in parallel, fetches results, cleans them, r
     "failed": 0,
     "gap_filled": 0,
     "total_chars": 18200,
-    "per_page_limit": 3200
+    "per_page_limit": 3200,
+    "num_results_per_query": 5
   }
 }
 ```
@@ -421,7 +422,7 @@ The `query` tool accepts `queries` as a single string or a list. The model is re
 ```json
 {
   "queries": ["python asyncio tutorial", "asyncio best practices 2024", "asyncio common pitfalls"],
-  "num_results": 5
+  "num_results_per_query": 5
 }
 ```
 
