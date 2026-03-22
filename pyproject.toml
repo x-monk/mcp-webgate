@@ -1,6 +1,6 @@
 [project]
 name = "mcp-xsearch"
-version = "0.1.8"
+version = "0.1.9"
 description = "Denoised web search MCP server with context flooding protection"
 readme = "README.md"
 license = "MIT"
@@ -46,6 +46,15 @@ packages = ["src/mcp_xsearch"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+filterwarnings = [
+    # Python 3.11 + unittest.mock.AsyncMock creates internal _execute_mock_call
+    # coroutines during mock setup that are never awaited. This is a known CPython
+    # issue (https://github.com/python/cpython/issues/91610) unrelated to test logic.
+    # Caught both as normal warnings (from unittest.mock) and as unraisable exceptions
+    # (from gc.collect() during pytest teardown).
+    "ignore::RuntimeWarning:unittest.mock",
+    "ignore:coroutine '.*' was never awaited:RuntimeWarning",
+]
 
 [dependency-groups]
 dev = ["pytest>=8.0", "pytest-asyncio>=0.24"]

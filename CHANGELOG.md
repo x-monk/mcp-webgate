@@ -1,5 +1,11 @@
 # Changelog
 
+* 2026-03-22: v0.1.9 - Test suite warning cleanup (Hannibal)
+  * fix(test_llm): proper async context manager mocking — __aenter__/__aexit__ set explicitly, no more internal coroutine leak
+  * fix(test_fetcher): response objects changed from AsyncMock to MagicMock; only actually-awaited methods (aclose, send) stay AsyncMock
+  * chore(pytest): filterwarnings for known CPython 3.11 AsyncMock _execute_mock_call issue (github.com/python/cpython/issues/91610)
+  * fix(test_integration_searxng): query_used renamed to queries since v0.1.4
+
 * 2026-03-22: v0.1.8 - Live LLM integration tests (Hannibal)
   * test(integration): test_integration_llm.py — 10 live tests against Ollama (gemma3:27b): LLMClient chat, expander variants, summarizer citations, LLM reranker relevance; auto-skip if Ollama unreachable
 
