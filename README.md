@@ -3,7 +3,7 @@
 [![Python Version](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![MCP Protocol](https://img.shields.io/badge/MCP-Protocol-blueviolet)](https://spec.modelcontextprotocol.io/)
-[![Latest Release](https://img.shields.io/badge/release-v0.1.14-purple.svg)](https://github.com/annibale-x/mcp-webgate/releases/tag/v0.1.14)
+[![Latest Release](https://img.shields.io/badge/release-v0.1.15-purple.svg)](https://github.com/annibale-x/mcp-webgate/releases/tag/v0.1.15)
 
 Denoised web search MCP server with intelligent fetching and context flooding protection.
 
@@ -263,6 +263,8 @@ uv add mcp-webgate
 
 ## ⚙️ Configuration
 
+Ready-to-use config files are in [`examples/`](examples/).
+
 ### Claude Code (`.mcp.json`)
 
 ```json
@@ -364,6 +366,14 @@ With LLM features and debug logging enabled:
 ```
 
 ### Config file (`webgate.toml`)
+
+`webgate.toml` is looked up in this order at **server startup**:
+
+1. `./webgate.toml` — current working directory (i.e. where the MCP host launches the process)
+2. `~/webgate.toml` — user home directory
+3. No file found → all defaults apply, env vars still override
+
+Env vars always win over file values (`env > file > defaults`). Config is read once at startup; changes require a server restart.
 
 ```toml
 [server]
