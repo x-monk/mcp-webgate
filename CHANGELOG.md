@@ -1,5 +1,8 @@
 # Changelog
 
+* 2026-03-22: v0.1.8 - Live LLM integration tests (Hannibal)
+  * test(integration): test_integration_llm.py — 10 live tests against Ollama (gemma3:27b): LLMClient chat, expander variants, summarizer citations, LLM reranker relevance; auto-skip if Ollama unreachable
+
 * 2026-03-22: v0.1.7 - Phase 4 — External LLM client (Hannibal)
   * feat(llm): LLMClient — async OpenAI-compatible /v1/chat/completions client (httpx, no SDK)
   * feat(llm): expander.py — single-query auto-expansion to N complementary queries via LLM
