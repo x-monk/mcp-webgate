@@ -1,12 +1,30 @@
 # Changelog
 
+* 2026-03-22: v0.1.17 - Float→int in config, Quick Start, sezione Tuning nel README (Hannibal)
+  * refactor(config): max_download_mb, search_timeout, llm.timeout, llm.input_budget_factor da float a int
+  * docs(readme): aggiunta sezione Quick Start (step-by-step per nuovi utenti)
+  * docs(readme): aggiunta sezione Tuning con tabelle budget fetch/query/LLM
+  * docs(readme): riscrittura orientata a utenti non tecnici; struttura più chiara e discorsiva
+  * docs(contributing): allineamento valori default (no float), aggiornamento descrizioni
+
+---
+
+* 2026-03-22: v0.1.16 - Budget asimmetrico fetch/query e LLM input factor (Hannibal)
+  * feat(fetch): ceiling raised from max_result_length to max_query_budget — single-page fetch can now return up to 32k chars
+  * feat(query): LLM summarization path now uses input_budget_factor (default 3×) for total input; per-page limit distributed from max_query_budget × factor
+  * feat(config): add LLMConfig.input_budget_factor (float, default 3.0); env var WEBGATE_LLM_INPUT_BUDGET_FACTOR
+
+---
+
 * 2026-03-22: v0.1.15 - TODO (Hannibal)
   * feat(): TODO
 
+---
 
 * 2026-03-22: v0.1.14 - TODO (Hannibal)
   * feat(): TODO
 
+---
 
 * 2026-03-22: v0.1.13 - Per-query debug grouping and aligned log output (Hannibal)
   * feat(logger): group fetch rows by originating query when expansion/multi-query active
@@ -14,6 +32,8 @@
   * feat(logger): summary line now shows raw/clean/output (output=summary KB if LLM, else =clean)
   * feat(logger): expand= timing only shown when expansion actually ran (>= 100ms threshold)
   * feat(query): track url_to_query_idx during round-robin flatten; pass query_idx in fetch_details
+
+---
 
 * 2026-03-22: v0.1.12 - Detailed debug logging and Zed config (Hannibal)
   * feat(logger): multi-line query log with timing breakdown (expand/search/fetch/total), per-URL fetch rows (raw KB → clean KB, elapsed ms), and totals summary
@@ -26,6 +46,8 @@
   * test(query): updated mock return values for new fetch_urls signature
   * test(logger): updated assertions for new log format
 
+---
+
 * 2026-03-22: v0.1.11 - num_results_per_query semantic (Hannibal)
   * feat(query): rename num_results → num_results_per_query; total = per_query × num_queries bounded by max_total_results (e.g. 3 queries × 5 = 15 results)
   * feat(query): num_results_per_query added to stats output
@@ -33,10 +55,14 @@
   * test(query): all num_results= calls updated to num_results_per_query=
   * docs(readme): query input/output examples updated; multi-query section clarified
 
+---
+
 * 2026-03-22: v0.1.10 - Documentation overhaul (Hannibal)
   * docs(readme): Gentle Introduction — context flooding problem, pipeline diagram, summarization advantage with self-hosted models
   * docs(readme): full Phase 4 LLM features section (expansion, summarization, reranking); TOC; emoji topic headers
   * docs(contributing): updated project structure (llm/ module, utils/reranker.py, correct test files); LLM config and env vars; anti-flooding table updated with retry backoff row; release workflow reflects bump→push and README badge update; testing patterns for async context managers and MagicMock vs AsyncMock; TOC; emoji headers
+
+---
 
 * 2026-03-22: v0.1.9 - Test suite warning cleanup (Hannibal)
   * fix(test_llm): proper async context manager mocking — __aenter__/__aexit__ set explicitly, no more internal coroutine leak
@@ -44,8 +70,12 @@
   * chore(pytest): filterwarnings for known CPython 3.11 AsyncMock _execute_mock_call issue (github.com/python/cpython/issues/91610)
   * fix(test_integration_searxng): query_used renamed to queries since v0.1.4
 
+---
+
 * 2026-03-22: v0.1.8 - Live LLM integration tests (Hannibal)
   * test(integration): test_integration_llm.py — 10 live tests against Ollama (gemma3:27b): LLMClient chat, expander variants, summarizer citations, LLM reranker relevance; auto-skip if Ollama unreachable
+
+---
 
 * 2026-03-22: v0.1.7 - Phase 4 — External LLM client (Hannibal)
   * feat(llm): LLMClient — async OpenAI-compatible /v1/chat/completions client (httpx, no SDK)
@@ -59,10 +89,14 @@
   * feat(server): webgate_onboarding reports LLM feature status (enabled/disabled per feature)
   * test(llm): test_llm.py — 21 mock-based cases: LLMClient, expander, summarizer, reranker (det. + LLM)
 
+---
+
 * 2026-03-22: v0.1.6 - robot.py hardening, Phase 4 pipeline design (Hannibal)
   * chore(robot): update README release badge on bump
   * chore(robot): auto-push dev to origin after bump commit
   * docs(plan): Phase 4 LLM pipeline redesign — reranker two-tier (deterministic BM25 always active, LLM opt-in), summarizer receives generous input (max_result_length becomes output target), extractor moved to "Ideas to evaluate" section with cost/benefit analysis
+
+---
 
 * 2026-03-22: v0.1.5 - Multi-query tool interface, onboarding tool (Hannibal)
   * feat(query): queries parameter accepts str | list[str] — model passes queries directly, no server-side LLM
@@ -73,11 +107,15 @@
   * refactor(config): removed query_expansion, expansion_model, expansion_max_queries; added max_queries
   * test(query): test_query.py — single/multi query, cap enforcement, round-robin, budget (9 cases)
 
+---
+
 * 2026-03-22: v0.1.4 - Multi-query parallel merging (Hannibal)
   * fix(query): all expanded queries now run in parallel via asyncio.gather (was: only queries[0] used)
   * feat(query): results from multiple queries merged in round-robin order to avoid single-query dominance
   * feat(query): query_used is a list when expansion returns multiple queries, string when single
   * test(query): parallel search call count, round-robin interleaving, query_used as list
+
+---
 
 * 2026-03-22: v0.1.3 - Retry backoff, domain filter (Hannibal)
   * feat(fetcher): exponential retry backoff on 429/502/503 with Retry-After header support
@@ -88,6 +126,8 @@
   * test(fetcher): TestRetryBackoff — 5 cases (429 retry, 503, exhausted, Retry-After, 404 no-retry)
   * test(url): TestIsDomainAllowed — 8 cases (blocklist, subdomain, allowlist precedence)
 
+---
+
 * 2026-03-22: v0.1.2 - Typography normalization, sliding window, query budget (Hannibal)
   * feat(cleaner): normalize_typography() — smart quotes, em/en dash, ellipsis, ligatures, soft hyphen
   * feat(cleaner): sliding window truncation on line boundaries instead of hard char cut
@@ -97,6 +137,8 @@
   * fix(robot): unicode arrow replaced with ASCII to fix cp1252 encoding on Windows
   * test(cleaner): TestNormalizeTypography (7 cases) and TestApplyWindow (5 cases)
   * test(query): TestQueryBudget — per_page distribution, ceiling cap, total bounded by budget
+
+---
 
 * 2026-03-22: v0.1.1 - Multi-backend, debug mode, Phase 2+3 (Hannibal)
   * feat(backends): Brave Search API backend with safesearch and lang support
@@ -117,6 +159,7 @@
   * test(debug): logger setup, log_fetch, log_query output, config validators
   * test(integration): live SearXNG integration tests (auto-skip if unavailable)
 
+---
 
 * 2026-03-21: v0.1.0 - Initial MVP (Hannibal)
   * feat(server): MCP entry point with `fetch` and `query` tools via FastMCP

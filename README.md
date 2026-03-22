@@ -1,249 +1,391 @@
-# MCP Xsearch
+# mcp-webgate
 
 [![Python Version](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![MCP Protocol](https://img.shields.io/badge/MCP-Protocol-blueviolet)](https://spec.modelcontextprotocol.io/)
-[![Latest Release](https://img.shields.io/badge/release-v0.1.15-purple.svg)](https://github.com/annibale-x/mcp-webgate/releases/tag/v0.1.15)
+[![Latest Release](https://img.shields.io/badge/release-v0.1.17-purple.svg)](https://github.com/annibale-x/mcp-webgate/releases/tag/v0.1.17)
 
-Denoised web search MCP server with intelligent fetching and context flooding protection.
-
----
-
-## 📋 Table of Contents
-
-- [🌱 Gentle Introduction](#-gentle-introduction)
-- [🔧 Tools](#-tools)
-- [🤖 LLM Features](#-llm-features)
-- [📦 Installation](#-installation)
-- [⚙️ Configuration](#️-configuration)
-  - [Claude Code](#claude-code-mcpjson)
-  - [Claude Desktop](#claude-desktop-claude_desktop_configjson)
-  - [Zed](#zed-settingsjson)
-- [🔌 Backends](#-backends)
-- [🔍 Multi-query parallel search](#-multi-query-parallel-search)
-- [🐛 Debug mode](#-debug-mode)
-- [🔄 Gap filler](#-gap-filler)
-- [🛡️ Protections summary](#️-protections-summary)
-- [📄 License](#-license)
+Web search that doesn't wreck your AI's memory.
 
 ---
 
-## 🌱 Gentle Introduction
+## Table of Contents
 
-### The problem: context flooding
-
-When an LLM uses a standard `fetch` MCP tool to read a web page, it receives the full, raw HTML of that page — scripts, navigation bars, footers, cookie banners, ads, and all. A single news article or documentation page can easily contain **200,000 tokens** of noise. With a single tool call, the model's entire context window can be wiped out, leaving no room for the actual conversation.
-
-This isn't hypothetical. It happens routinely whenever a model decides on its own initiative to fetch a URL: it calls the native fetch tool, the full HTML lands in the context, and suddenly your carefully crafted prompt is gone.
-
-### How mcp-webgate solves it
-
-`mcp-webgate` acts as a protective layer between the model and the web. Every page that passes through it is:
-
-1. **Structurally cleaned** with `lxml` — navigation menus, footers, scripts, ads, and sidebars are surgically removed before the text even reaches the model
-2. **Hard-capped** — each result is truncated to a configurable character budget; no page can ever consume more than its allotted share of context
-3. **Binary-filtered** — PDF, ZIP, DOCX and other non-text files are blocked *before* any network request is made
-4. **Unicode-sterilized** — zero-width characters, BiDi overrides, and other invisible junk are stripped from the output
-
-The result is that a `query` call returning 5 results will consume a *predictable*, *bounded* amount of context — typically 16,000–20,000 characters total — regardless of how bloated the original pages were.
-
-### The summarization advantage
-
-The LLM features (optional) take this a step further. Instead of returning cleaned text directly to the model, you can route it through a **secondary LLM** that produces a concise summary with inline citations.
-
-This is particularly powerful when using a **self-hosted model** (e.g. Ollama with Llama 3, Gemma 3, Mistral, etc.) because:
-
-- **The secondary model receives generous input** — up to 32,000 characters of rich, clean content per query — so it has the full picture to summarize from
-- **The invoking model receives only the summary** — typically a few hundred words with `[1][2]` citations pointing back to sources — consuming a fraction of the context
-- **No API cost** — a self-hosted model summarizes for free; only the final compact output reaches the paid/primary model
-- **Higher quality** — summarizing from full content produces far more accurate and complete answers than summarizing from truncated snippets
-
-In other words: the secondary model does the heavy lifting on raw content, and your primary model gets a polished, cited briefing instead of a wall of text.
-
-### The pipeline at a glance
-
-```
-User query
-    ↓
-Search backend (SearXNG / Brave / Tavily / Exa / SerpAPI)
-    ↓
-URL dedup + binary filter + domain filter
-    ↓
-Parallel fetch (httpx streaming — hard download cap)
-    ↓
-lxml cleaning (remove nav / footer / scripts / ads)
-    ↓
-Text sterilization (unicode, BiDi, noise lines)
-    ↓
-BM25 reranking (deterministic, always active)
-    ↓  ← optional LLM reranking
-Top-N results
-    ↓  ← optional LLM summarization
-Structured JSON output → model context
-```
+- [What is this?](#what-is-this)
+- [Quick Start](#quick-start)
+- [How it works](#how-it-works)
+- [Tools](#tools)
+- [Tuning](#tuning)
+- [LLM Features](#llm-features)
+- [Installation](#installation)
+- [Full Configuration](#full-configuration)
+- [Backends](#backends)
+- [Debug mode](#debug-mode)
+- [Protections summary](#protections-summary)
+- [License](#license)
 
 ---
 
-## 🔧 Tools
+## What is this?
 
-### `fetch` — single page retrieval
+When your AI uses a standard "fetch URL" tool, it gets the raw HTML of the page — ads, menus, scripts, cookie banners and all. A single news article can dump **200,000 tokens** of garbage into the AI's memory, wiping out your entire conversation.
 
-Retrieves and cleans a single URL. Use this when you already know the URL you need.
+**mcp-webgate** is a protective filter that sits between your AI and the web:
 
-**Input**
-```json
-{
-  "url": "https://example.com/article",
-  "max_chars": 4000
-}
-```
+1. **Strips the junk** — menus, scripts, ads, footers are removed with surgical HTML parsing; only readable text passes through
+2. **Hard-caps every response** — no page can ever blow up your context window, no matter how big the original was
+3. **Optionally summarizes** — route results through a secondary local LLM that produces a compact Markdown report with citations; your primary AI gets a polished briefing instead of a wall of text
 
-**Output**
-```json
-{
-  "url": "https://example.com/article",
-  "title": "Article Title",
-  "text": "cleaned and truncated text...",
-  "truncated": true,
-  "char_count": 4000
-}
-```
+The result: clean, bounded, useful web content — always.
 
 ---
 
-### `query` — full search cycle
+## Quick Start
 
-Executes one or more search queries in parallel, fetches results, cleans them, reranks them, and returns structured context. Optionally summarizes via an external LLM.
+**Step 1 — Make sure you have `uvx`**
 
-**Input**
-```json
-{
-  "queries": ["python async httpx tutorial", "httpx asyncio guide"],
-  "num_results_per_query": 5,
-  "lang": "en",
-  "backend": "searxng"
-}
+```bash
+pip install uv
 ```
 
-`queries` accepts a single string or a list (up to `max_queries`, default 5). Multiple queries run in parallel and results are merged in round-robin order so no single query dominates. `num_results_per_query` is per query: 3 queries × 5 = 15 total results, bounded by `max_total_results`.
+`uvx` runs Python tools without installing them permanently. You only need to do this once.
 
-**Output**
+**Step 2 — Set up a search backend**
+
+The easiest option is **SearXNG** — free, no account, runs locally:
+
+```bash
+docker run -d -p 8080:8080 --name searxng searxng/searxng
+```
+
+No Docker? Use a cloud backend instead (Brave, Tavily, Exa, SerpAPI) — see [Backends](#backends).
+
+**Step 3 — Add webgate to your AI client**
+
+Pick your client and paste the config. Restart the client afterward.
+
+### Claude Desktop
+
+Open the config file:
+- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+
+Add this:
+
 ```json
 {
-  "queries": ["python async httpx tutorial", "httpx asyncio guide"],
-  "sources": [
-    {
-      "id": 1,
-      "title": "HTTPX Async Client",
-      "url": "https://...",
-      "snippet": "...",
-      "content": "cleaned text...",
-      "truncated": false
+  "mcpServers": {
+    "webgate": {
+      "command": "uvx",
+      "args": ["mcp-webgate"],
+      "env": {
+        "WEBGATE_DEFAULT_BACKEND": "searxng",
+        "WEBGATE_SEARXNG_URL": "http://localhost:8080"
+      }
     }
-  ],
-  "snippet_pool": [
-    { "id": 6, "title": "...", "url": "...", "snippet": "..." }
-  ],
-  "summary": "Optional Markdown summary with citations [1][2]...",
-  "stats": {
-    "fetched": 5,
-    "failed": 0,
-    "gap_filled": 0,
-    "total_chars": 18200,
-    "per_page_limit": 3200,
-    "num_results_per_query": 5
   }
 }
 ```
 
-`snippet_pool` contains results from the oversampling reserve (search-snippet only, not fetched).
-`summary` is present when `llm.enabled = true` and `llm.summarization_enabled = true` in server config.
+### Claude Code
+
+Create `.mcp.json` in your project folder:
+
+```json
+{
+  "mcpServers": {
+    "webgate": {
+      "command": "uvx",
+      "args": ["mcp-webgate"],
+      "env": {
+        "WEBGATE_DEFAULT_BACKEND": "searxng",
+        "WEBGATE_SEARXNG_URL": "http://localhost:8080"
+      }
+    }
+  }
+}
+```
+
+### Zed
+
+Open Settings (`Ctrl+Shift+P` → *Open settings file*) and add:
+
+```json
+{
+  "context_servers": {
+    "webgate": {
+      "command": "uvx",
+      "args": ["mcp-webgate"],
+      "env": {
+        "WEBGATE_DEFAULT_BACKEND": "searxng",
+        "WEBGATE_SEARXNG_URL": "http://localhost:8080"
+      }
+    }
+  }
+}
+```
+
+**Step 4 — Ask your AI to search!**
+
+```
+Search the web for: latest news on AI regulation
+```
+
+The AI will use `webgate_query` automatically. You're done. 🎉
 
 ---
 
-### `webgate_onboarding` — operational guide
+## How it works
 
-Returns a JSON guide explaining how to use webgate tools effectively. Call it once at the start of a search session. When LLM features are enabled, it reports their status.
-
-```json
-{ "tools": {...}, "protections": {...}, "tips": [...], "llm_features": {...} }
+```
+Your question
+    ↓
+Search backend  (SearXNG / Brave / Tavily / Exa / SerpAPI)
+    ↓  [deduplicate URLs, block binary files, filter domains]
+Fetch pages in parallel  (streaming — hard size cap per page)
+    ↓  [optional: retry failed pages from reserve pool]
+Strip HTML junk  (menus, ads, scripts, footers — lxml)
+    ↓
+Clean up text  (invisible chars, unicode junk, BiDi tricks)
+    ↓
+BM25 reranking  (best-matching results first — always active)
+    ↓  [optional: LLM reranking]
+Cap total output to budget
+    ↓  [optional: LLM summarization → compact Markdown report]
+Clean result lands in your AI's context
 ```
 
 ---
 
-## 🤖 LLM Feature
+## Tools
 
-Optional, opt-in integrations that delegate intelligence to an external model via a configurable HTTP client. The server remains fully deterministic when these features are disabled. All features share a single `[llm]` config block.
+webgate gives your AI three tools:
 
-### Configuration
+### `webgate_fetch` — read a single page
+
+Use this when you already know the URL you want. The AI passes the URL and gets back the cleaned text — up to `max_query_budget` characters (default 32,000).
+
+```json
+{ "url": "https://example.com/article", "max_chars": 32000 }
+```
+
+```json
+{
+  "url": "https://example.com/article",
+  "title": "Article Title",
+  "text": "cleaned text...",
+  "truncated": true,
+  "char_count": 12450
+}
+```
+
+### `webgate_query` — search + fetch + clean
+
+Runs a full search cycle. Pass one query (or several) and get back cleaned, ranked results.
+
+```json
+{ "queries": "how to set up a VPN on Linux", "num_results_per_query": 5 }
+```
+
+Multiple queries run in parallel and are merged:
+
+```json
+{
+  "queries": ["VPN Linux setup", "best VPN Linux 2024"],
+  "num_results_per_query": 5
+}
+```
+
+**Output without LLM** — returns cleaned page content for each result:
+
+```json
+{
+  "sources": [
+    { "id": 1, "title": "...", "url": "...", "content": "cleaned text...", "truncated": false }
+  ],
+  "snippet_pool": [ { "id": 6, "title": "...", "url": "...", "snippet": "..." } ],
+  "stats": { "fetched": 5, "total_chars": 18200, "per_page_limit": 6400 }
+}
+```
+
+**Output with LLM summarization** — returns a compact Markdown report:
+
+```json
+{
+  "summary": "## How to set up a VPN on Linux\n\nTo install...[1][2]",
+  "citations": [{ "id": 1, "title": "...", "url": "..." }],
+  "stats": { "fetched": 5, "total_chars": 58000 }
+}
+```
+
+**Output when LLM fails** — error reason shown, full sources returned as fallback:
+
+```json
+{
+  "llm_summary_error": "ReadTimeout: LLM did not respond in time",
+  "sources": [ "..." ],
+  "stats": { "..." : "..." }
+}
+```
+
+`snippet_pool` contains extra results from the search that were not fetched (search-engine snippet only). The AI can use these to decide if more fetches are worthwhile.
+
+### `webgate_onboarding` — how-to guide
+
+Returns a JSON guide explaining how to use webgate effectively. The AI should call this once at the start of a session if in doubt about which tool to use.
+
+---
+
+## Tuning
+
+This section explains what the key parameters do and when to change them. The defaults work well for most cases — only tweak if you have a specific reason.
+
+### What is a "character budget"?
+
+webgate measures text in **characters** (not tokens). A rough conversion for English text:
+
+> 4 characters ≈ 1 token
+
+| Characters | Approximate tokens |
+|------------|-------------------|
+| 8,000 | ~2,000 |
+| 32,000 | ~8,000 |
+| 96,000 | ~24,000 |
+
+---
+
+### `webgate_fetch` budget
+
+When you fetch a single URL, the ceiling is `max_query_budget` (default **32,000 chars**). The tool parameter `max_chars` can request less, but never more than this ceiling.
+
+**Why `max_query_budget` and not `max_result_length`?** Because you're fetching one page — the "total output" IS that one page, so the right limit is the overall context budget, not the per-page cap designed for multi-source queries.
+
+---
+
+### `webgate_query` budget — without LLM
+
+With no LLM, the cleaned sources go directly to your AI's context. webgate distributes `max_query_budget` across all fetched pages so the total never exceeds the budget:
+
+> **Per-page limit** = `max_query_budget` ÷ number of results
+> (capped at `max_result_length`)
+
+| Results fetched | Per-page limit | Total output |
+|-----------------|---------------|-------------|
+| 1 | 8,000 (cap) | ≤ 8,000 |
+| 5 | 6,400 | ≤ 32,000 |
+| 10 | 3,200 | ≤ 32,000 |
+| 20 | 1,600 | ≤ 32,000 |
+
+The total output is always at most `max_query_budget`, regardless of how many results you request — the per-page share automatically shrinks to compensate.
+
+---
+
+### `webgate_query` budget — with LLM summarization
+
+When a secondary LLM is summarizing, it *compresses* the content before passing the result to your primary AI. This means it's safe — and beneficial — to give it more raw material to work from.
+
+webgate scales up the input using `input_budget_factor` (default **3**):
+
+> **LLM input budget** = `max_query_budget` × `input_budget_factor`
+> Default: 32,000 × 3 = **96,000 chars**
+
+| Results fetched | LLM input / page | Total LLM input | Output to your AI |
+|-----------------|-----------------|----------------|------------------|
+| 1 | 96,000 | 96,000 | compact report |
+| 5 | 19,200 | 96,000 | compact report |
+| 10 | 9,600 | 96,000 | compact report |
+| 20 | 4,800 | 96,000 | compact report |
+
+The secondary LLM sees much more content per page. Your primary AI sees only the final report — typically **1,000–3,000 tokens** — regardless of how many sources were processed. This is the main efficiency advantage of LLM mode.
+
+---
+
+### Quick tuning guide
+
+| Symptom | Fix |
+|---------|-----|
+| AI responses feel slow, too much text | Reduce `max_query_budget` (e.g. `16000`) |
+| AI answers are shallow or miss details | Increase `max_query_budget` (e.g. `48000`) |
+| LLM summary is thin or misses things | Increase `input_budget_factor` (e.g. `5`) |
+| LLM summary times out or is very slow | Reduce `input_budget_factor` (e.g. `2`) or reduce `results_per_query` |
+| `fetch` returns too little of a long page | Increase `max_query_budget` (e.g. `64000`) |
+| Pages are slow to download | Reduce `max_download_mb` (e.g. `1`, already default) |
+| Server downloads too much garbage | Reduce `max_download_mb` (e.g. `1`) |
+
+---
+
+## LLM Features
+
+Optional, opt-in. When `llm.enabled = false` (the default), webgate is fully deterministic. Enable the `[llm]` block to unlock three extra capabilities.
+
+### Setup
 
 ```toml
 [llm]
 enabled  = true
-base_url = "http://localhost:11434/v1"   # Ollama, OpenAI, LM Studio, vLLM, Groq…
+base_url = "http://localhost:11434/v1"   # Ollama, OpenAI, LM Studio, vLLM, Groq...
 api_key  = ""                            # empty for local models
 model    = "gemma3:27b"
-timeout  = 15.0
-
-# Per-feature flags
-expansion_enabled       = true   # auto-expand single queries into N variants
-summarization_enabled   = true   # allow summarize=true on query calls
-llm_rerank_enabled      = false  # LLM-assisted reranking (adds latency)
-summarizer_input_limit  = 32000  # chars of content fed to the summarizer
+timeout  = 60                            # local 27B+ models may need up to 60s
 ```
 
-Env vars: `WEBGATE_LLM_ENABLED`, `WEBGATE_LLM_BASE_URL`, `WEBGATE_LLM_API_KEY`, `WEBGATE_LLM_MODEL`, `WEBGATE_LLM_TIMEOUT`, `WEBGATE_LLM_EXPANSION_ENABLED`, `WEBGATE_LLM_SUMMARIZATION_ENABLED`, `WEBGATE_LLM_RERANK_ENABLED`.
+Or with env vars:
 
-The `base_url` accepts any OpenAI-compatible endpoint: **OpenAI**, **Ollama**, **LM Studio**, **vLLM**, **Together AI**, **Groq**, and others.
-
----
-
-### 🔀 Query expansion
-
-When LLM is enabled and `expansion_enabled = true`, a single-query call is automatically expanded into multiple complementary queries before hitting the search backend. If multiple queries are already provided, expansion is skipped.
-
-```
-"python asyncio tutorial"
-    ↓ expansion (3 queries total)
-["python asyncio tutorial", "asyncio event loop deep dive", "asyncio best practices 2024"]
-    ↓ all run in parallel
+```json
+"env": {
+  "WEBGATE_LLM_ENABLED": "true",
+  "WEBGATE_LLM_BASE_URL": "http://localhost:11434/v1",
+  "WEBGATE_LLM_MODEL": "gemma3:27b",
+  "WEBGATE_LLM_TIMEOUT": "60"
+}
 ```
 
-Falls back silently to the original query on any LLM error.
+`base_url` accepts any OpenAI-compatible endpoint: **OpenAI**, **Ollama**, **LM Studio**, **vLLM**, **Together AI**, **Groq**, and others.
 
 ---
 
-### 📝 Summarization
+### Query expansion
 
-Activated automatically when `llm.enabled = true` and `summarization_enabled = true` (both default when LLM is configured). No parameter needed — the model does not control this.
+When you send a single query and `expansion_enabled = true`, the LLM automatically generates complementary search variants before hitting the backend. If you already pass multiple queries, this step is skipped.
 
-1. The cleaned content from all fetched sources (up to `summarizer_input_limit` chars, default 32k) is sent to the external LLM
-2. The LLM produces a concise Markdown answer with inline citations `[1]`, `[2]`, etc.
-3. The `summary` field is appended to the response
+```
+"best laptop for programming"
+    ↓ expansion
+["best laptop for programming 2024", "developer laptop recommendations", "laptop specs for coding"]
+    ↓ all search in parallel
+```
 
-**Why the generous input limit matters:** unlike the hard truncation applied to direct output, the summarizer receives the full cleaned content. A 5-source query at 32k input gives the summarizer ~6,400 chars per source to work from — far richer than a truncated snippet. The result is a summary that is both accurate and well-cited.
-
-`max_result_length` controls the *target length* of the summary output (passed as a prompt guideline), not the input fed to the summarizer.
-
-Falls back silently on any LLM error — the rest of the response is always returned.
-
----
-
-### 🏆 Reranking
-
-Results are reranked before being returned. Two tiers:
-
-**Tier 1 — Deterministic BM25** (always active, zero cost)
-Scores each result by keyword overlap between the query and the cleaned text (title + snippet + first 500 chars of content). Improves over raw backend ordering with no network call.
-
-**Tier 2 — LLM-assisted** (opt-in, `llm_rerank_enabled = true`)
-Sends the query plus lightweight result summaries (title + snippet + first 200 chars) to the external LLM for semantic relevance judgment. Adds latency proportional to LLM response time.
-
-Pipeline position: `clean → rerank → summarizer (if enabled) → output`.
+Falls back silently to your original query if the LLM fails.
 
 ---
 
-## 📦 Installation
+### Summarization
+
+When `summarization_enabled = true`, the LLM reads all fetched pages and writes a structured Markdown report with inline citations. Your AI receives the report instead of the raw text.
+
+- **Success**: `summary` + `citations` (lean output — no raw content passed to your AI)
+- **Failure**: `llm_summary_error` with the reason + full `sources` as fallback (your AI can still work with the cleaned content)
+
+The report length target is `max_summary_words`. When `0` (default), it is derived from `max_query_budget / 5` — e.g. with a 32k budget, the target is ~6,400 words.
+
+---
+
+### Reranking
+
+Results are always reranked by BM25 (keyword overlap, zero cost) before being returned. Optionally, the LLM can do a second pass for semantic relevance:
+
+| Tier | When | Cost |
+|------|------|------|
+| **BM25** (deterministic) | Always | Zero — pure math |
+| **LLM-assisted** | `llm_rerank_enabled = true` | One LLM call per query |
+
+LLM reranking adds latency proportional to your LLM response time. Enable it only if result ordering matters more than speed.
+
+Pipeline: `clean → BM25 rerank → (LLM rerank) → (LLM summarize) → output`
+
+---
+
+## Installation
 
 ### Via uvx (recommended — no install needed)
 
@@ -261,132 +403,33 @@ uv add mcp-webgate
 
 ---
 
-## ⚙️ Configuration
+## Full Configuration
 
 Ready-to-use config files are in [`examples/`](examples/).
 
-### Claude Code (`.mcp.json`)
-
-```json
-{
-  "mcpServers": {
-    "webgate": {
-      "command": "uvx",
-      "args": ["mcp-webgate"],
-      "env": {
-        "WEBGATE_DEFAULT_BACKEND": "searxng",
-        "WEBGATE_SEARXNG_URL": "http://localhost:8080",
-        "WEBGATE_MAX_RESULT_LENGTH": "4000"
-      }
-    }
-  }
-}
-```
-
-### Claude Desktop (`claude_desktop_config.json`)
-
-```json
-{
-  "mcpServers": {
-    "webgate": {
-      "command": "uvx",
-      "args": ["mcp-webgate"],
-      "env": {
-        "WEBGATE_DEFAULT_BACKEND": "searxng",
-        "WEBGATE_SEARXNG_URL": "http://localhost:8080"
-      }
-    }
-  }
-}
-```
-
-### Zed (`settings.json`)
-
-Open **Settings** (`Ctrl+Shift+P` → *Open settings file*) and add the server under `context_servers`:
-
-```json
-{
-  "context_servers": {
-    "webgate": {
-      "command": "uvx",
-      "args": ["mcp-webgate"],
-      "env": {
-        "WEBGATE_DEFAULT_BACKEND": "searxng",
-        "WEBGATE_SEARXNG_URL": "http://localhost:8080"
-      }
-    }
-  }
-}
-```
-
-With LLM features and debug logging enabled:
-
-```json
-{
-  "context_servers": {
-    "webgate": {
-      "command": "uvx",
-      "args": ["mcp-webgate"],
-      "env": {
-        "WEBGATE_DEFAULT_BACKEND": "searxng",
-        "WEBGATE_SEARXNG_URL": "http://localhost:8080",
-        "WEBGATE_LLM_ENABLED": "true",
-        "WEBGATE_LLM_BASE_URL": "http://localhost:11434/v1",
-        "WEBGATE_LLM_MODEL": "gemma3:27b",
-        "WEBGATE_DEBUG": "true",
-        "WEBGATE_LOG_FILE": "%TEMP%/webgate.log"
-      }
-    }
-  }
-}
-```
-
-`%TEMP%` is expanded by the OS on Windows. On Linux/macOS use `$TMPDIR/webgate.log` or an absolute path.
-
----
-
-### With Ollama LLM features
-
-```json
-{
-  "mcpServers": {
-    "webgate": {
-      "command": "uvx",
-      "args": ["mcp-webgate"],
-      "env": {
-        "WEBGATE_DEFAULT_BACKEND": "searxng",
-        "WEBGATE_SEARXNG_URL": "http://localhost:8080",
-        "WEBGATE_LLM_ENABLED": "true",
-        "WEBGATE_LLM_BASE_URL": "http://localhost:11434/v1",
-        "WEBGATE_LLM_MODEL": "gemma3:27b"
-      }
-    }
-  }
-}
-```
-
 ### Config file (`webgate.toml`)
 
-`webgate.toml` is looked up in this order at **server startup**:
+webgate looks for `webgate.toml` at startup in this order:
 
-1. `./webgate.toml` — current working directory (i.e. where the MCP host launches the process)
-2. `~/webgate.toml` — user home directory
-3. No file found → all defaults apply, env vars still override
+1. `./webgate.toml` — current working directory
+2. `~/webgate.toml` — your home directory
+3. Nothing found → all defaults apply
 
-Env vars always win over file values (`env > file > defaults`). Config is read once at startup; changes require a server restart.
+Env vars always win over file values. Config is read once at startup; restart the server to apply changes.
 
 ```toml
 [server]
-max_download_mb = 1        # hard cap on per-page download size
-max_result_length = 4000   # cap per single page / summary output target
-max_query_budget = 16000   # total char budget for a full query response
-max_queries = 5            # hard cap on parallel queries per call
-search_timeout = 8
-oversampling_factor = 2
-auto_recovery_fetch = false
-max_total_results = 20
-blocked_domains = ["reddit.com", "pinterest.com"]
-allowed_domains = []
+max_download_mb    = 1        # how many MB to download per page before cutting off
+max_result_length  = 8000     # max chars per page in multi-source queries (no LLM)
+max_query_budget   = 32000    # total char budget for a fetch, or input pool for a query
+max_search_queries = 5        # max parallel queries per call
+results_per_query  = 5        # results to fetch per query
+search_timeout     = 8        # seconds before giving up on a page
+oversampling_factor = 2       # fetch 2× more candidates than needed (dedup reserve)
+auto_recovery_fetch = false   # retry failed fetches from reserve pool
+max_total_results  = 20       # hard cap: never fetch more than this many pages total
+blocked_domains    = ["reddit.com", "pinterest.com"]
+allowed_domains    = []       # if non-empty, only these domains are allowed
 
 [backends]
 default = "searxng"
@@ -405,12 +448,13 @@ search_depth = "basic"
 enabled  = true
 base_url = "http://localhost:11434/v1"
 api_key  = ""
-model    = "gemma3:27b"
-timeout  = 15.0
-expansion_enabled      = true
-summarization_enabled  = true
-llm_rerank_enabled     = false
-summarizer_input_limit = 32000
+model    = "llama3.2"
+timeout  = 60
+expansion_enabled     = true
+summarization_enabled = true
+llm_rerank_enabled    = false
+max_summary_words     = 0     # 0 = max_query_budget / 5 (e.g. 6400 with budget 32000)
+input_budget_factor   = 3     # LLM input = max_query_budget × factor (default: 96000)
 ```
 
 ### Environment variables
@@ -423,31 +467,34 @@ summarizer_input_limit = 32000
 | `WEBGATE_TAVILY_API_KEY` | _(empty)_ | Tavily API key |
 | `WEBGATE_EXA_API_KEY` | _(empty)_ | Exa API key |
 | `WEBGATE_SERPAPI_API_KEY` | _(empty)_ | SerpAPI key |
-| `WEBGATE_SERPAPI_ENGINE` | `google` | SerpAPI engine (`google`, `bing`, …) |
+| `WEBGATE_SERPAPI_ENGINE` | `google` | SerpAPI engine (`google`, `bing`, ...) |
 | `WEBGATE_SERPAPI_GL` | `us` | SerpAPI country code |
 | `WEBGATE_SERPAPI_HL` | `en` | SerpAPI language |
-| `WEBGATE_MAX_DOWNLOAD_MB` | `1.0` | Per-page download size cap |
-| `WEBGATE_MAX_RESULT_LENGTH` | `4000` | Per-result character cap / summary output target |
-| `WEBGATE_MAX_QUERY_BUDGET` | `16000` | Total char budget for a `query` response |
-| `WEBGATE_MAX_QUERIES` | `5` | Max parallel queries per `query` call |
-| `WEBGATE_SEARCH_TIMEOUT` | `8.0` | Request timeout in seconds |
-| `WEBGATE_OVERSAMPLING_FACTOR` | `2` | Search result multiplier |
+| `WEBGATE_MAX_DOWNLOAD_MB` | `1` | Per-page download size cap (MB) |
+| `WEBGATE_MAX_RESULT_LENGTH` | `8000` | Per-page char cap (no-LLM multi-source queries) |
+| `WEBGATE_MAX_QUERY_BUDGET` | `32000` | Total char budget for fetch and query |
+| `WEBGATE_MAX_SEARCH_QUERIES` | `5` | Max queries per call |
+| `WEBGATE_RESULTS_PER_QUERY` | `5` | Default results fetched per query |
+| `WEBGATE_SEARCH_TIMEOUT` | `8` | HTTP request timeout in seconds |
+| `WEBGATE_OVERSAMPLING_FACTOR` | `2` | Search result multiplier for dedup reserve |
 | `WEBGATE_AUTO_RECOVERY_FETCH` | `false` | Enable gap-filler (Round 2 fetch) |
-| `WEBGATE_MAX_TOTAL_RESULTS` | `20` | Global cap per `query` call |
-| `WEBGATE_DEBUG` | `false` | Enable debug logging |
+| `WEBGATE_MAX_TOTAL_RESULTS` | `20` | Hard cap on total results per query call |
+| `WEBGATE_DEBUG` | `false` | Enable structured debug logging |
 | `WEBGATE_LOG_FILE` | _(empty)_ | Log file path (empty = stderr) |
 | `WEBGATE_LLM_ENABLED` | `false` | Enable LLM features |
 | `WEBGATE_LLM_BASE_URL` | `http://localhost:11434/v1` | OpenAI-compatible endpoint |
 | `WEBGATE_LLM_API_KEY` | _(empty)_ | API key (empty for local models) |
 | `WEBGATE_LLM_MODEL` | `llama3.2` | Model name |
-| `WEBGATE_LLM_TIMEOUT` | `15.0` | LLM request timeout in seconds |
+| `WEBGATE_LLM_TIMEOUT` | `15` | LLM request timeout in seconds |
 | `WEBGATE_LLM_EXPANSION_ENABLED` | `true` | Enable automatic query expansion |
 | `WEBGATE_LLM_SUMMARIZATION_ENABLED` | `true` | Enable automatic summarization |
 | `WEBGATE_LLM_RERANK_ENABLED` | `false` | Enable LLM-assisted reranking |
+| `WEBGATE_LLM_MAX_SUMMARY_WORDS` | `0` | Summary word target (0 = max_query_budget / 5) |
+| `WEBGATE_LLM_INPUT_BUDGET_FACTOR` | `3` | LLM input budget multiplier |
 
 ---
 
-## 🔌 Backends
+## Backends
 
 | Backend | Auth | Notes |
 |---------|------|-------|
@@ -471,65 +518,42 @@ Exa uses neural (semantic) search by default — the primary reason to use it ov
 
 ### SerpAPI notes
 
-`engine` selects the underlying search engine (`google`, `bing`, `duckduckgo`, `yandex`, `yahoo`) without code changes. `gl` and `hl` significantly affect result quality for non-English queries.
+`engine` selects the underlying search engine (`google`, `bing`, `duckduckgo`, `yandex`, `yahoo`). `gl` and `hl` significantly affect result quality for non-English queries.
 
 ---
 
-## 🔍 Multi-query parallel search
+## Debug mode
 
-The `query` tool accepts `queries` as a single string or a list. The model is responsible for generating complementary queries — webgate executes them in parallel and merges results in round-robin order.
+When enabled, every tool call logs a structured entry:
 
-```json
-{
-  "queries": ["python asyncio tutorial", "asyncio best practices 2024", "asyncio common pitfalls"],
-  "num_results_per_query": 5
-}
-```
-
-The server cap `max_queries` (default 5) silently truncates longer lists. When LLM is enabled and `expansion_enabled = true`, a single-query call is automatically expanded server-side.
-
----
-
-## 🐛 Debug mode
-
-When enabled, every tool invocation emits a structured log entry:
-
-- **`fetch`**: URL, raw KB received, clean KB returned, elapsed ms, success/failed
-- **`query`**: query string(s), results requested/fetched/failed/gap-filled, raw MB, clean KB, elapsed ms
+- **`fetch`**: URL, raw KB downloaded, clean KB returned, elapsed ms
+- **`query`**: queries used, results requested/fetched/failed, raw MB, clean KB, total elapsed ms
 
 ```bash
 export WEBGATE_DEBUG=true             # log to stderr
-export WEBGATE_LOG_FILE=/tmp/x.log   # log to file
+export WEBGATE_LOG_FILE=/tmp/wg.log  # or log to file
 ```
 
 ---
 
-## 🔄 Gap filler
+## Protections summary
 
-When `auto_recovery_fetch = true`, failed fetches are automatically retried using the oversampling reserve pool (Round 2). Disabled by default to keep latency predictable.
+These protections are always active — they are the core value proposition and cannot be disabled.
 
-```bash
-export WEBGATE_AUTO_RECOVERY_FETCH=true
-```
-
----
-
-## 🛡️ Protections summary
-
-| Risk | Protection |
-|------|-----------|
-| 2 MB raw HTML page | `max_download_mb` hard download cap |
-| Oversized text after cleaning | `max_result_length` hard char cap |
-| Too many fetched pages | `max_total_results` global cap |
-| Context saturation from multi-result query | `max_query_budget` total char budget |
-| Binary files (.pdf, .zip, .docx…) | Extension filter before any network request |
-| Hanging connections | `search_timeout` + 5 s connect timeout |
-| Unicode junk, BiDi injection | Regex sterilization pipeline |
-| Blocked by rate limiting (429/502/503) | Exponential retry backoff, respects `Retry-After` |
-| Low-quality or unwanted domains | `blocked_domains` / `allowed_domains` filter |
+| What could go wrong | How webgate stops it |
+|---------------------|---------------------|
+| Page dumps 2 MB of HTML | `max_download_mb` hard cap — download stops mid-stream, never buffered |
+| Cleaned text is still huge | `max_result_length` char cap per page |
+| Many results flood the context | `max_query_budget` distributes a fixed total across all results |
+| Too many pages fetched | `max_total_results` hard cap |
+| PDF / ZIP / DOCX requested | Binary extension filter runs *before* any network request |
+| Slow or hanging connections | `search_timeout` + 5s connect timeout |
+| Invisible Unicode tricks in content | Full regex sterilization pipeline (zero-width, BiDi, etc.) |
+| Rate limiting (429 / 502 / 503) | Exponential retry backoff, respects `Retry-After` header |
+| Unwanted domains | `blocked_domains` / `allowed_domains` filter |
 
 ---
 
-## 📄 License
+## License
 
 MIT — see [LICENSE](LICENSE).

@@ -1,6 +1,6 @@
 """Tests for URL utilities."""
 
-from mcp_xsearch.utils.url import dedup_urls, is_binary_url, sanitize_url
+from mcp_webgate.utils.url import dedup_urls, is_binary_url, is_domain_allowed, sanitize_url
 
 
 class TestSanitizeUrl:
@@ -75,3 +75,30 @@ class TestDedupUrls:
             "https://example.com/page/",
         ]
         assert len(dedup_urls(urls)) == 1
+
+
+class TestIsDomainAllowed:
+    def test_empty_lists_allow_everything(self):
+        assert is_domain_allowed("https://example.com/page", [], []) is True
+
+    def test_blocklist_rejects_exact_match(self):
+        assert is_domain_allowed("https://reddit.com/r/python", ["reddit.com"], []) is False
+
+    def test_blocklist_rejects_subdomain(self):
+        assert is_domain_allowed("https://www.reddit.com/r/python", ["reddit.com"], []) is False
+
+    def test_blocklist_allows_unrelated(self):
+        assert is_domain_allowed("https://github.com/user/repo", ["reddit.com"], []) is True
+
+    def test_allowlist_accepts_match(self):
+        assert is_domain_allowed("https://docs.python.org/3/", [], ["python.org"]) is True
+
+    def test_allowlist_accepts_subdomain(self):
+        assert is_domain_allowed("https://docs.python.org/3/", [], ["python.org"]) is True
+
+    def test_allowlist_rejects_non_match(self):
+        assert is_domain_allowed("https://reddit.com/r/python", [], ["python.org"]) is False
+
+    def test_allowlist_takes_precedence_over_blocklist(self):
+        # When allowed is set, only it matters — blocked is ignored
+        assert is_domain_allowed("https://python.org", ["python.org"], ["python.org"]) is True

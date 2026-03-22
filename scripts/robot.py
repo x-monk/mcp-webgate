@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """
-robot.py — Project automation for mcp-xsearch.
+robot.py — Project automation for mcp-webgate.
 
 Commands:
   test                Run the full test suite
   build               Build PyPI wheel + sdist into dist/
+  install             Uninstall, clean, rebuild, and install as uv tool
   bump [X.Y.Z]        Bump version and commit on dev branch
   promote             Merge dev->main, tag, push, checkout dev
   publish [-t/--test] Publish to PyPI (or TestPyPI with -t/--test)
+  query QUERY         Run webgate_query and print JSON results
 """
 
 from __future__ import annotations
@@ -23,7 +25,8 @@ from pathlib import Path
 ROOT = Path(__file__).parent.parent
 PYPROJECT = ROOT / "pyproject.toml"
 CHANGELOG = ROOT / "CHANGELOG.md"
-INIT = ROOT / "src" / "mcp_xsearch" / "__init__.py"
+INIT = ROOT / "src" / "mcp_webgate" / "__init__.py"
+README = ROOT / "README.md"
 
 
 # ---------------------------------------------------------------------------
@@ -83,6 +86,23 @@ def write_version(new_ver: str) -> None:
         )
         INIT.write_text(init_text, encoding="utf-8")
 
+    # README.md — update release badge
+    if README.exists():
+        readme_text = README.read_text(encoding="utf-8")
+        readme_text = re.sub(
+            r"(release-v)[^)]*?(-purple\.svg\))",
+            f"\\g<1>{new_ver}\\2",
+            readme_text,
+            count=1,
+        )
+        readme_text = re.sub(
+            r"(releases/tag/v)[^)]+\)",
+            f"\\g<1>{new_ver})",
+            readme_text,
+            count=1,
+        )
+        README.write_text(readme_text, encoding="utf-8")
+
 
 def bump_patch(version: str) -> str:
     """Increment the patch component: X.Y.Z -> X.Y.Z+1."""
@@ -105,48 +125,30 @@ def validate_version(v: str) -> None:
 def changelog_has_entry(version: str) -> bool:
     """Return True if CHANGELOG already has a section for this version."""
     text = CHANGELOG.read_text(encoding="utf-8")
-    return f"## [{version}]" in text
+    return f": v{version} -" in text
 
 
 def scaffold_changelog(version: str) -> None:
-    """Insert a new section for version into CHANGELOG.md."""
+    """Insert a new scaffold entry for version at the top of CHANGELOG.md."""
     today = datetime.date.today().isoformat()
     text = CHANGELOG.read_text(encoding="utf-8")
 
-    new_section = textwrap.dedent(f"""\
-        ## [{version}] - {today}
-
-        ### Added
-        -
-
-        ### Changed
-        -
-
-        ### Fixed
-        -
+    new_entry = textwrap.dedent(f"""\
+        * {today}: v{version} - TODO (Hannibal)
+          * feat(): TODO
 
     """)
 
-    # Insert after the ## [Unreleased] header (or at the top of releases)
+    # Insert after the "# Changelog" header line
     text = re.sub(
-        r"(## \[Unreleased\].*?\n)",
-        r"\1\n" + new_section,
+        r"(# Changelog\n)",
+        r"\1\n" + new_entry,
         text,
         count=1,
-        flags=re.DOTALL,
     )
-
-    # Add link reference at the bottom
-    prev_ver = read_version()  # current version before bump
-    old_link = f"[{prev_ver}]: https://github.com/annibale-x/mcp-xsearch/releases/tag/v{prev_ver}"
-    new_link = (
-        f"[{version}]: https://github.com/annibale-x/mcp-xsearch/compare/v{prev_ver}...v{version}\n"
-        + old_link
-    )
-    text = text.replace(old_link, new_link)
 
     CHANGELOG.write_text(text, encoding="utf-8")
-    print(f"  Scaffolded CHANGELOG entry for {version}")
+    print(f"  Scaffolded CHANGELOG entry for v{version}")
 
 
 def get_current_branch() -> str:
@@ -190,7 +192,7 @@ def cmd_bump(args: argparse.Namespace) -> None:
     else:
         new_ver = bump_patch(current)
 
-    info(f"Bumping version: {current} → {new_ver}")
+    info(f"Bumping version: {current} -> {new_ver}")
 
     # Scaffold CHANGELOG if user hasn't already added an entry
     if not changelog_has_entry(new_ver):
@@ -206,9 +208,11 @@ def cmd_bump(args: argparse.Namespace) -> None:
     run(["git", "add",
          str(PYPROJECT.relative_to(ROOT)),
          str(INIT.relative_to(ROOT)),
-         str(CHANGELOG.relative_to(ROOT))])
+         str(CHANGELOG.relative_to(ROOT)),
+         str(README.relative_to(ROOT))])
     run(["git", "commit", "-m", f"chore: bump version to {new_ver}"])
-    info(f"Committed version bump to dev.")
+    run(["git", "push", "origin", "dev"])
+    info(f"Committed and pushed version bump to dev.")
 
 
 def cmd_promote(args: argparse.Namespace) -> None:
@@ -227,7 +231,7 @@ def cmd_promote(args: argparse.Namespace) -> None:
         die(f"Tag '{tag}' already exists. Did you forget to bump?")
 
     # Merge dev -> main
-    info("Merging dev → main …")
+    info("Merging dev -> main ...")
     run(["git", "checkout", "main"])
     run(["git", "merge", "--no-ff", "dev", "-m", f"chore: promote {tag} to main"])
 
@@ -243,6 +247,138 @@ def cmd_promote(args: argparse.Namespace) -> None:
     run(["git", "push", "origin", "dev"])
 
     info(f"Promote complete. {tag} is live on main.")
+
+
+def get_version_on_branch(branch: str) -> str:
+    """Read the version from pyproject.toml on a given branch."""
+    try:
+        result = run(["git", "show", f"{branch}:pyproject.toml"], capture=True, check=False)
+        if result.returncode != 0:
+            return "(branch not found)"
+        m = re.search(r'^version\s*=\s*"([^"]+)"', result.stdout, re.MULTILINE)
+        return m.group(1) if m else "(?)"
+    except Exception:
+        return "(?)"
+
+
+def get_changelog_titles(n: int = 3) -> list[str]:
+    """Return the first n release title lines from CHANGELOG.md."""
+    try:
+        text = CHANGELOG.read_text(encoding="utf-8")
+        return re.findall(r"^\* \d{4}-\d{2}-\d{2}: .+", text, re.MULTILINE)[:n]
+    except Exception:
+        return []
+
+
+def count_tests() -> int:
+    """Count test functions in the tests/ directory."""
+    tests_dir = ROOT / "tests"
+    total = 0
+    for f in tests_dir.glob("test_*.py"):
+        text = f.read_text(encoding="utf-8")
+        total += len(re.findall(r"^\s+(?:async )?def test_", text, re.MULTILINE))
+    return total
+
+
+def cmd_status(args: argparse.Namespace) -> None:
+    branch = get_current_branch()
+    dev_ver = get_version_on_branch("dev")
+    main_ver = get_version_on_branch("main")
+    titles = get_changelog_titles(3)
+    n_tests = count_tests()
+
+    # Uncommitted changes
+    dirty = run(["git", "status", "--porcelain"], capture=True, check=False)
+    dirty_count = len([l for l in dirty.stdout.splitlines() if l.strip()])
+
+    print()
+    print("=" * 52)
+    print("  mcp-webgate project status")
+    print("=" * 52)
+    print(f"  branch   : {branch}")
+    print(f"  dev      : v{dev_ver}")
+    print(f"  main     : v{main_ver}")
+    print(f"  tests    : {n_tests} collected")
+    print(f"  dirty    : {dirty_count} uncommitted file(s)")
+    print()
+    print("  Recent releases:")
+    for t in titles:
+        print(f"    {t}")
+    print("=" * 52)
+
+
+def cmd_install(args: argparse.Namespace) -> None:
+    """Uninstall mcp-webgate tool, clean cache, rebuild, and install fresh."""
+    version = read_version()
+
+    info("Uninstalling mcp-webgate tool …")
+    run(["uv", "tool", "uninstall", "mcp-webgate"], check=False)
+
+    info("Clearing cached tool environments …")
+    run(["uv", "cache", "prune"], check=False)
+
+    # Build fresh wheel
+    cmd_build(args)
+
+    # Find and install the wheel
+    dist = ROOT / "dist"
+    wheels = list(dist.glob("*.whl"))
+    if not wheels:
+        die("No wheel found in dist/")
+
+    whl = wheels[0]
+    info(f"Installing {whl.name} …")
+    run(["uv", "tool", "install", str(whl)])
+
+    info(f"mcp-webgate v{version} installed as uv tool.")
+
+
+def cmd_query(args: argparse.Namespace) -> None:
+    """Execute a webgate_query using the local config and print results as JSON."""
+    import asyncio
+    import json as _json
+    import sys as _sys
+
+    src = ROOT / "src"
+    if str(src) not in _sys.path:
+        _sys.path.insert(0, str(src))
+
+    from mcp_webgate.config import load_config  # noqa: PLC0415
+    from mcp_webgate.tools.query import tool_query  # noqa: PLC0415
+
+    cfg = load_config()
+    backend_name = args.backend or cfg.backends.default
+
+    if backend_name == "searxng":
+        from mcp_webgate.backends.searxng import SearxngBackend  # noqa: PLC0415
+        backend = SearxngBackend(cfg.backends.searxng)
+    elif backend_name == "brave":
+        from mcp_webgate.backends.brave import BraveBackend  # noqa: PLC0415
+        backend = BraveBackend(cfg.backends.brave)
+    elif backend_name == "tavily":
+        from mcp_webgate.backends.tavily import TavilyBackend  # noqa: PLC0415
+        backend = TavilyBackend(cfg.backends.tavily)
+    elif backend_name == "exa":
+        from mcp_webgate.backends.exa import ExaBackend  # noqa: PLC0415
+        backend = ExaBackend(cfg.backends.exa)
+    elif backend_name == "serpapi":
+        from mcp_webgate.backends.serpapi import SerpapiBackend  # noqa: PLC0415
+        backend = SerpapiBackend(cfg.backends.serpapi)
+    else:
+        die(f"Unknown backend: {backend_name!r}")
+
+    trace = True  # robot query is a dev tool — always include trace data
+
+    info(f"Querying {args.query!r} via {backend_name} …")
+    result = asyncio.run(tool_query(
+        args.query,
+        backend,
+        cfg,
+        num_results_per_query=args.num_results,
+        lang=args.lang,
+        trace=trace,
+    ))
+    print(_json.dumps(result, ensure_ascii=False, indent=2))
 
 
 def cmd_publish(args: argparse.Namespace) -> None:
@@ -267,7 +403,7 @@ def cmd_publish(args: argparse.Namespace) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(
         prog="robot",
-        description="Project automation for mcp-xsearch",
+        description="Project automation for mcp-webgate",
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -282,7 +418,9 @@ def main() -> None:
         help="Target version (default: auto-increment patch)",
     )
 
-    sub.add_parser("promote", help="Merge dev→main, tag, push, checkout dev")
+    sub.add_parser("status", help="Show branch, versions, recent changelog, test count")
+    sub.add_parser("install", help="Uninstall, clean, rebuild, and install as uv tool")
+    sub.add_parser("promote", help="Merge dev->main, tag, push, checkout dev")
 
     p_pub = sub.add_parser("publish", help="Publish to PyPI")
     p_pub.add_argument(
@@ -291,14 +429,40 @@ def main() -> None:
         help="Publish to TestPyPI instead",
     )
 
+    p_query = sub.add_parser("query", help="Run webgate_query and print JSON results")
+    p_query.add_argument("query", metavar="QUERY", help="Search query string")
+    p_query.add_argument(
+        "-n", "--num-results",
+        dest="num_results",
+        type=int,
+        default=5,
+        metavar="N",
+        help="Results per query (default: 5)",
+    )
+    p_query.add_argument(
+        "-l", "--lang",
+        default=None,
+        metavar="LANG",
+        help="Language code, e.g. en, it (default: none)",
+    )
+    p_query.add_argument(
+        "-b", "--backend",
+        default=None,
+        metavar="BACKEND",
+        help="Backend to use: searxng|brave|tavily|exa|serpapi (default: config value)",
+    )
+
     args = parser.parse_args()
 
     dispatch = {
         "test": cmd_test,
         "build": cmd_build,
         "bump": cmd_bump,
+        "install": cmd_install,
+        "status": cmd_status,
         "promote": cmd_promote,
         "publish": cmd_publish,
+        "query": cmd_query,
     }
     dispatch[args.command](args)
 

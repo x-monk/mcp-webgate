@@ -1,6 +1,6 @@
 [project]
 name = "mcp-webgate"
-version = "0.1.15"
+version = "0.1.17"
 description = "Denoised web search MCP server with context flooding protection"
 readme = "README.md"
 license = "MIT"
