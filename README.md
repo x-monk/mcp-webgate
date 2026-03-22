@@ -3,7 +3,7 @@
 [![Python Version](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![MCP Protocol](https://img.shields.io/badge/MCP-Protocol-blueviolet)](https://spec.modelcontextprotocol.io/)
-[![Latest Release](https://img.shields.io/badge/release-v0.1.11-purple.svg)](https://github.com/annibale-x/mcp-xsearch/releases/tag/v0.1.11)
+[![Latest Release](https://img.shields.io/badge/release-v0.1.12-purple.svg)](https://github.com/annibale-x/mcp-webgate/releases/tag/v0.1.12)
 
 Denoised web search MCP server with intelligent fetching and context flooding protection.
 
@@ -16,6 +16,9 @@ Denoised web search MCP server with intelligent fetching and context flooding pr
 - [🤖 LLM Features](#-llm-features)
 - [📦 Installation](#-installation)
 - [⚙️ Configuration](#️-configuration)
+  - [Claude Code](#claude-code-mcpjson)
+  - [Claude Desktop](#claude-desktop-claude_desktop_configjson)
+  - [Zed](#zed-settingsjson)
 - [🔌 Backends](#-backends)
 - [🔍 Multi-query parallel search](#-multi-query-parallel-search)
 - [🐛 Debug mode](#-debug-mode)
@@ -33,9 +36,9 @@ When an LLM uses a standard `fetch` MCP tool to read a web page, it receives the
 
 This isn't hypothetical. It happens routinely whenever a model decides on its own initiative to fetch a URL: it calls the native fetch tool, the full HTML lands in the context, and suddenly your carefully crafted prompt is gone.
 
-### How mcp-xsearch solves it
+### How mcp-webgate solves it
 
-`mcp-xsearch` acts as a protective layer between the model and the web. Every page that passes through it is:
+`mcp-webgate` acts as a protective layer between the model and the web. Every page that passes through it is:
 
 1. **Structurally cleaned** with `lxml` — navigation menus, footers, scripts, ads, and sidebars are surgically removed before the text even reaches the model
 2. **Hard-capped** — each result is truncated to a configurable character budget; no page can ever consume more than its allotted share of context
@@ -46,7 +49,7 @@ The result is that a `query` call returning 5 results will consume a *predictabl
 
 ### The summarization advantage
 
-The LLM features (optional, Phase 4) take this a step further. Instead of returning cleaned text directly to the model, you can route it through a **secondary LLM** that produces a concise summary with inline citations.
+The LLM features (optional) take this a step further. Instead of returning cleaned text directly to the model, you can route it through a **secondary LLM** that produces a concise summary with inline citations.
 
 This is particularly powerful when using a **self-hosted model** (e.g. Ollama with Llama 3, Gemma 3, Mistral, etc.) because:
 
@@ -159,9 +162,9 @@ Executes one or more search queries in parallel, fetches results, cleans them, r
 
 ---
 
-### `xsearch_onboarding` — operational guide
+### `webgate_onboarding` — operational guide
 
-Returns a JSON guide explaining how to use xsearch tools effectively. Call it once at the start of a search session. When LLM features are enabled, it reports their status.
+Returns a JSON guide explaining how to use webgate tools effectively. Call it once at the start of a search session. When LLM features are enabled, it reports their status.
 
 ```json
 { "tools": {...}, "protections": {...}, "tips": [...], "llm_features": {...} }
@@ -169,9 +172,9 @@ Returns a JSON guide explaining how to use xsearch tools effectively. Call it on
 
 ---
 
-## 🤖 LLM Features
+## 🤖 LLM Feature
 
-Phase 4 adds optional LLM-assisted intelligence to the pipeline. All features are **opt-in** and require a configured `[llm]` block. The server is fully deterministic when LLM is disabled.
+Optional, opt-in integrations that delegate intelligence to an external model via a configurable HTTP client. The server remains fully deterministic when these features are disabled. All features share a single `[llm]` config block.
 
 ### Configuration
 
@@ -190,7 +193,7 @@ llm_rerank_enabled      = false  # LLM-assisted reranking (adds latency)
 summarizer_input_limit  = 32000  # chars of content fed to the summarizer
 ```
 
-Env vars: `XSEARCH_LLM_ENABLED`, `XSEARCH_LLM_BASE_URL`, `XSEARCH_LLM_API_KEY`, `XSEARCH_LLM_MODEL`, `XSEARCH_LLM_TIMEOUT`.
+Env vars: `WEBGATE_LLM_ENABLED`, `WEBGATE_LLM_BASE_URL`, `WEBGATE_LLM_API_KEY`, `WEBGATE_LLM_MODEL`, `WEBGATE_LLM_TIMEOUT`.
 
 The `base_url` accepts any OpenAI-compatible endpoint: **OpenAI**, **Ollama**, **LM Studio**, **vLLM**, **Together AI**, **Groq**, and others.
 
@@ -246,15 +249,15 @@ Pipeline position: `clean → rerank → summarizer (if enabled) → output`.
 ### Via uvx (recommended — no install needed)
 
 ```bash
-uvx mcp-xsearch
+uvx mcp-webgate
 ```
 
 ### Via pip / uv
 
 ```bash
-pip install mcp-xsearch
+pip install mcp-webgate
 # or
-uv add mcp-xsearch
+uv add mcp-webgate
 ```
 
 ---
@@ -266,13 +269,13 @@ uv add mcp-xsearch
 ```json
 {
   "mcpServers": {
-    "xsearch": {
+    "webgate": {
       "command": "uvx",
-      "args": ["mcp-xsearch"],
+      "args": ["mcp-webgate"],
       "env": {
-        "XSEARCH_DEFAULT_BACKEND": "searxng",
-        "XSEARCH_SEARXNG_URL": "http://localhost:8080",
-        "XSEARCH_MAX_RESULT_LENGTH": "4000"
+        "WEBGATE_DEFAULT_BACKEND": "searxng",
+        "WEBGATE_SEARXNG_URL": "http://localhost:8080",
+        "WEBGATE_MAX_RESULT_LENGTH": "4000"
       }
     }
   }
@@ -284,39 +287,84 @@ uv add mcp-xsearch
 ```json
 {
   "mcpServers": {
-    "xsearch": {
+    "webgate": {
       "command": "uvx",
-      "args": ["mcp-xsearch"],
+      "args": ["mcp-webgate"],
       "env": {
-        "XSEARCH_DEFAULT_BACKEND": "searxng",
-        "XSEARCH_SEARXNG_URL": "http://localhost:8080"
+        "WEBGATE_DEFAULT_BACKEND": "searxng",
+        "WEBGATE_SEARXNG_URL": "http://localhost:8080"
       }
     }
   }
 }
 ```
+
+### Zed (`settings.json`)
+
+Open **Settings** (`Ctrl+Shift+P` → *Open settings file*) and add the server under `context_servers`:
+
+```json
+{
+  "context_servers": {
+    "webgate": {
+      "command": "uvx",
+      "args": ["mcp-webgate"],
+      "env": {
+        "WEBGATE_DEFAULT_BACKEND": "searxng",
+        "WEBGATE_SEARXNG_URL": "http://localhost:8080"
+      }
+    }
+  }
+}
+```
+
+With LLM features and debug logging enabled:
+
+```json
+{
+  "context_servers": {
+    "webgate": {
+      "command": "uvx",
+      "args": ["mcp-webgate"],
+      "env": {
+        "WEBGATE_DEFAULT_BACKEND": "searxng",
+        "WEBGATE_SEARXNG_URL": "http://localhost:8080",
+        "WEBGATE_LLM_ENABLED": "true",
+        "WEBGATE_LLM_BASE_URL": "http://localhost:11434/v1",
+        "WEBGATE_LLM_MODEL": "gemma3:27b",
+        "WEBGATE_DEBUG": "true",
+        "WEBGATE_LOG_FILE": "%TEMP%/webgate.log"
+      }
+    }
+  }
+}
+```
+
+`%TEMP%` is expanded by the OS on Windows. On Linux/macOS use `$TMPDIR/webgate.log` or an absolute path.
+
+---
 
 ### With Ollama LLM features
 
 ```json
 {
   "mcpServers": {
-    "xsearch": {
+    "webgate": {
       "command": "uvx",
-      "args": ["mcp-xsearch"],
+      "args": ["mcp-webgate"],
       "env": {
-        "XSEARCH_DEFAULT_BACKEND": "searxng",
-        "XSEARCH_SEARXNG_URL": "http://localhost:8080",
-        "XSEARCH_LLM_ENABLED": "true",
-        "XSEARCH_LLM_BASE_URL": "http://localhost:11434/v1",
-        "XSEARCH_LLM_MODEL": "gemma3:27b"
+        "WEBGATE_DEFAULT_BACKEND": "searxng",
+        "WEBGATE_SEARXNG_URL": "http://localhost:8080",
+        "WEBGATE_LLM_ENABLED": "true",
+        "WEBGATE_LLM_BASE_URL": "http://localhost:11434/v1",
+        "WEBGATE_LLM_MODEL": "gemma3:27b"
       }
     }
   }
 }
 ```
 
-### Config file (`xsearch.toml`)
+### Config file (`webgate.toml`)
 
 ```toml
 [server]
@@ -360,30 +408,30 @@ summarizer_input_limit = 32000
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `XSEARCH_DEFAULT_BACKEND` | `searxng` | Active backend |
-| `XSEARCH_SEARXNG_URL` | `http://localhost:8080` | SearXNG instance URL |
-| `XSEARCH_BRAVE_API_KEY` | _(empty)_ | Brave Search API key |
-| `XSEARCH_TAVILY_API_KEY` | _(empty)_ | Tavily API key |
-| `XSEARCH_EXA_API_KEY` | _(empty)_ | Exa API key |
-| `XSEARCH_SERPAPI_API_KEY` | _(empty)_ | SerpAPI key |
-| `XSEARCH_SERPAPI_ENGINE` | `google` | SerpAPI engine (`google`, `bing`, …) |
-| `XSEARCH_SERPAPI_GL` | `us` | SerpAPI country code |
-| `XSEARCH_SERPAPI_HL` | `en` | SerpAPI language |
-| `XSEARCH_MAX_DOWNLOAD_MB` | `1.0` | Per-page download size cap |
-| `XSEARCH_MAX_RESULT_LENGTH` | `4000` | Per-result character cap / summary output target |
-| `XSEARCH_MAX_QUERY_BUDGET` | `16000` | Total char budget for a `query` response |
-| `XSEARCH_MAX_QUERIES` | `5` | Max parallel queries per `query` call |
-| `XSEARCH_SEARCH_TIMEOUT` | `8.0` | Request timeout in seconds |
-| `XSEARCH_OVERSAMPLING_FACTOR` | `2` | Search result multiplier |
-| `XSEARCH_AUTO_RECOVERY_FETCH` | `false` | Enable gap-filler (Round 2 fetch) |
-| `XSEARCH_MAX_TOTAL_RESULTS` | `20` | Global cap per `query` call |
-| `XSEARCH_DEBUG` | `false` | Enable debug logging |
-| `XSEARCH_LOG_FILE` | _(empty)_ | Log file path (empty = stderr) |
-| `XSEARCH_LLM_ENABLED` | `false` | Enable LLM features |
-| `XSEARCH_LLM_BASE_URL` | `http://localhost:11434/v1` | OpenAI-compatible endpoint |
-| `XSEARCH_LLM_API_KEY` | _(empty)_ | API key (empty for local models) |
-| `XSEARCH_LLM_MODEL` | `llama3.2` | Model name |
-| `XSEARCH_LLM_TIMEOUT` | `15.0` | LLM request timeout in seconds |
+| `WEBGATE_DEFAULT_BACKEND` | `searxng` | Active backend |
+| `WEBGATE_SEARXNG_URL` | `http://localhost:8080` | SearXNG instance URL |
+| `WEBGATE_BRAVE_API_KEY` | _(empty)_ | Brave Search API key |
+| `WEBGATE_TAVILY_API_KEY` | _(empty)_ | Tavily API key |
+| `WEBGATE_EXA_API_KEY` | _(empty)_ | Exa API key |
+| `WEBGATE_SERPAPI_API_KEY` | _(empty)_ | SerpAPI key |
+| `WEBGATE_SERPAPI_ENGINE` | `google` | SerpAPI engine (`google`, `bing`, …) |
+| `WEBGATE_SERPAPI_GL` | `us` | SerpAPI country code |
+| `WEBGATE_SERPAPI_HL` | `en` | SerpAPI language |
+| `WEBGATE_MAX_DOWNLOAD_MB` | `1.0` | Per-page download size cap |
+| `WEBGATE_MAX_RESULT_LENGTH` | `4000` | Per-result character cap / summary output target |
+| `WEBGATE_MAX_QUERY_BUDGET` | `16000` | Total char budget for a `query` response |
+| `WEBGATE_MAX_QUERIES` | `5` | Max parallel queries per `query` call |
+| `WEBGATE_SEARCH_TIMEOUT` | `8.0` | Request timeout in seconds |
+| `WEBGATE_OVERSAMPLING_FACTOR` | `2` | Search result multiplier |
+| `WEBGATE_AUTO_RECOVERY_FETCH` | `false` | Enable gap-filler (Round 2 fetch) |
+| `WEBGATE_MAX_TOTAL_RESULTS` | `20` | Global cap per `query` call |
+| `WEBGATE_DEBUG` | `false` | Enable debug logging |
+| `WEBGATE_LOG_FILE` | _(empty)_ | Log file path (empty = stderr) |
+| `WEBGATE_LLM_ENABLED` | `false` | Enable LLM features |
+| `WEBGATE_LLM_BASE_URL` | `http://localhost:11434/v1` | OpenAI-compatible endpoint |
+| `WEBGATE_LLM_API_KEY` | _(empty)_ | API key (empty for local models) |
+| `WEBGATE_LLM_MODEL` | `llama3.2` | Model name |
+| `WEBGATE_LLM_TIMEOUT` | `15.0` | LLM request timeout in seconds |
 
 ---
 
@@ -403,11 +451,11 @@ summarizer_input_limit = 32000
 docker run -d -p 8080:8080 --name searxng searxng/searxng
 ```
 
-Then set `XSEARCH_SEARXNG_URL=http://localhost:8080`.
+Then set `WEBGATE_SEARXNG_URL=http://localhost:8080`.
 
 ### Exa notes
 
-Exa uses neural (semantic) search by default — the primary reason to use it over keyword backends. `use_autoprompt` is always disabled internally because mcp-xsearch handles query expansion.
+Exa uses neural (semantic) search by default — the primary reason to use it over keyword backends. `use_autoprompt` is always disabled internally because mcp-webgate handles query expansion.
 
 ### SerpAPI notes
 
@@ -417,7 +465,7 @@ Exa uses neural (semantic) search by default — the primary reason to use it ov
 
 ## 🔍 Multi-query parallel search
 
-The `query` tool accepts `queries` as a single string or a list. The model is responsible for generating complementary queries — xsearch executes them in parallel and merges results in round-robin order.
+The `query` tool accepts `queries` as a single string or a list. The model is responsible for generating complementary queries — webgate executes them in parallel and merges results in round-robin order.
 
 ```json
 {
@@ -438,8 +486,8 @@ When enabled, every tool invocation emits a structured log entry:
 - **`query`**: query string(s), results requested/fetched/failed/gap-filled, raw MB, clean KB, elapsed ms
 
 ```bash
-export XSEARCH_DEBUG=true             # log to stderr
-export XSEARCH_LOG_FILE=/tmp/x.log   # log to file
+export WEBGATE_DEBUG=true             # log to stderr
+export WEBGATE_LOG_FILE=/tmp/x.log   # log to file
 ```
 
 ---
@@ -449,7 +497,7 @@ export XSEARCH_LOG_FILE=/tmp/x.log   # log to file
 When `auto_recovery_fetch = true`, failed fetches are automatically retried using the oversampling reserve pool (Round 2). Disabled by default to keep latency predictable.
 
 ```bash
-export XSEARCH_AUTO_RECOVERY_FETCH=true
+export WEBGATE_AUTO_RECOVERY_FETCH=true
 ```
 
 ---

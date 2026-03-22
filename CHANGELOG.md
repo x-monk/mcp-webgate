@@ -1,5 +1,16 @@
 # Changelog
 
+* 2026-03-22: v0.1.12 - Detailed debug logging and Zed config (Hannibal)
+  * feat(logger): multi-line query log with timing breakdown (expand/search/fetch/total), per-URL fetch rows (raw KB → clean KB, elapsed ms), and totals summary
+  * feat(fetcher): _fetch_single now returns (html, elapsed_ms, raw_bytes) tuple; fetch_urls returns (html_map, timing_map)
+  * feat(query): timing checkpoints for expansion, search, fetch phases; fetch_details collected during assembly
+  * feat(robot): add `install` command — uninstall, clean cache, rebuild, install as uv tool
+  * docs(readme): add Zed `context_servers` configuration section (minimal + LLM/debug variant)
+  * docs(contributing): document `install` command in daily commands
+  * test(fetcher): updated for new tuple return type
+  * test(query): updated mock return values for new fetch_urls signature
+  * test(logger): updated assertions for new log format
+
 * 2026-03-22: v0.1.11 - num_results_per_query semantic (Hannibal)
   * feat(query): rename num_results → num_results_per_query; total = per_query × num_queries bounded by max_total_results (e.g. 3 queries × 5 = 15 results)
   * feat(query): num_results_per_query added to stats output
@@ -27,10 +38,10 @@
   * feat(llm): summarizer.py — Markdown summary with inline citations; receives full cleaned text (generous input_limit), max_result_length becomes output target guideline
   * feat(utils): reranker.py — two-tier: deterministic BM25 (always active) + LLM-assisted opt-in (title+snippet+200 chars input only)
   * feat(config): LLMConfig block — enabled, base_url, api_key, model, timeout, expansion_enabled, summarization_enabled, llm_rerank_enabled, summarizer_input_limit
-  * feat(config): XSEARCH_LLM_* env var mappings
+  * feat(config): WEBGATE_LLM_* env var mappings
   * feat(query): summarize: bool parameter — appends summary field when LLM is configured
   * refactor(query): pipeline order: search → fetch → clean → BM25 rerank → (LLM rerank) → (summarize) → output
-  * feat(server): xsearch_onboarding reports LLM feature status (enabled/disabled per feature)
+  * feat(server): webgate_onboarding reports LLM feature status (enabled/disabled per feature)
   * test(llm): test_llm.py — 21 mock-based cases: LLMClient, expander, summarizer, reranker (det. + LLM)
 
 * 2026-03-22: v0.1.6 - robot.py hardening, Phase 4 pipeline design (Hannibal)
@@ -42,7 +53,7 @@
   * feat(query): queries parameter accepts str | list[str] — model passes queries directly, no server-side LLM
   * feat(query): max_queries config cap (default 5) — silently truncates overlength lists
   * feat(query): output field renamed query_used -> queries
-  * feat(server): xsearch_onboarding tool — returns JSON guide for models (tools, protections, tips)
+  * feat(server): webgate_onboarding tool — returns JSON guide for models (tools, protections, tips)
   * refactor(server): removed expander.py and all Anthropic API calls — server is now fully deterministic
   * refactor(config): removed query_expansion, expansion_model, expansion_max_queries; added max_queries
   * test(query): test_query.py — single/multi query, cap enforcement, round-robin, budget (9 cases)
@@ -94,7 +105,7 @@
 
 * 2026-03-21: v0.1.0 - Initial MVP (Hannibal)
   * feat(server): MCP entry point with `fetch` and `query` tools via FastMCP
-  * feat(config): Pydantic config system with env vars, xsearch.toml, and defaults
+  * feat(config): Pydantic config system with env vars, webgate.toml, and defaults
   * feat(cleaner): lxml XPath pipeline + regex sterilization (unicode, BiDi, noise lines)
   * feat(fetcher): httpx async streaming fetcher with UA rotation and per-page size cap
   * feat(backends): SearXNG backend with abstract SearchBackend interface
