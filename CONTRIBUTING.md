@@ -14,6 +14,7 @@
 - [Anti-flooding protections](#anti-flooding-protections)
 - [Adding a new backend](#adding-a-new-backend)
 - [Testing](#testing)
+- [CI](#ci)
 - [Release workflow](#release-workflow)
 - [Code style](#code-style)
 - [Roadmap](#roadmap)
@@ -349,6 +350,28 @@ mock_backend.search = AsyncMock(return_value=[SearchResult(...)])
 ```
 
 Response objects should be `MagicMock()`, not `AsyncMock()` — only the methods that are actually awaited (`aclose`, `send`, `post`) should be `AsyncMock`. This avoids Python 3.11 `AsyncMock._execute_mock_call` ghost-coroutine warnings.
+
+---
+
+## CI
+
+The project uses GitHub Actions to run the full test suite on Windows, Linux, and macOS on every release.
+
+**Trigger:** `push: tags: v*.*.*` — fires automatically when `robot.py promote` pushes the version tag to origin. The action never fires on `dev` pushes, only on actual releases.
+
+**Workflow file:** [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
+
+**Matrix:** `ubuntu-latest`, `windows-latest`, `macos-latest`, Python 3.11.
+`fail-fast: false` — all three platforms always complete even if one fails.
+
+**What it runs:**
+
+```bash
+uv sync --all-groups   # install all deps including dev
+uv run pytest -v       # full test suite (mock-based; no live services needed)
+```
+
+Integration tests (`test_integration_searxng.py`, `test_integration_llm.py`) auto-skip because the required services (SearXNG, Ollama) are not available in the CI environment.
 
 ---
 
