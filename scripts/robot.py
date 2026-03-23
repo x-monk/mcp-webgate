@@ -173,7 +173,11 @@ def cmd_build(args: argparse.Namespace) -> None:
     dist = ROOT / "dist"
     if dist.exists():
         shutil.rmtree(dist)
-    run(["uv", "build"])
+    original_readme = inject_recent_changes(4)
+    try:
+        run(["uv", "build"])
+    finally:
+        restore_readme(original_readme)
     artifacts = list(dist.iterdir())
     info(f"Build complete. Artifacts in dist/:")
     for a in artifacts:
@@ -272,6 +276,35 @@ def get_changelog_titles(n: int = 3) -> list[str]:
         return re.findall(r"^\* \d{4}-\d{2}-\d{2}: .+", text, re.MULTILINE)[:n]
     except Exception:
         return []
+
+
+def inject_recent_changes(n: int = 4) -> str:
+    """Inject a Recent Changes section into README between the markers. Returns original content."""
+    text = README.read_text(encoding="utf-8")
+    titles = get_changelog_titles(n)
+    if not titles:
+        return text
+    rows = "\n".join(f"| {t} |" for t in titles)
+    block = (
+        "<!-- RECENT_CHANGES_START -->\n"
+        "## 📋 Recent Changes\n\n"
+        "| Release |\n"
+        "|---------|\n"
+        f"{rows}\n\n"
+        "<!-- RECENT_CHANGES_END -->"
+    )
+    patched = re.sub(
+        r"<!-- RECENT_CHANGES_START -->.*?<!-- RECENT_CHANGES_END -->",
+        block,
+        text,
+        flags=re.DOTALL,
+    )
+    README.write_text(patched, encoding="utf-8")
+    return text
+
+
+def restore_readme(original: str) -> None:
+    README.write_text(original, encoding="utf-8")
 
 
 def count_tests() -> int:

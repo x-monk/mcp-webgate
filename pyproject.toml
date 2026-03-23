@@ -6,7 +6,7 @@ readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
 authors = [{ name = "Hannibal", email = "annibale.x@gmail.com" }]
-keywords = ["mcp", "search", "web", "llm", "claude", "context"]
+keywords = ["mcp", "search", "web", "llm", "context"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",

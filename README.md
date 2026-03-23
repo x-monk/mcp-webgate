@@ -589,6 +589,9 @@ These protections are always active — they are the core value proposition and 
 - **[Agent Integration](docs/integrations/AGENT.md)** — Gemini CLI, Claude CLI, custom agents
 - **[Advanced Features](ADVANCED.md)** — BM25/LLM reranking internals, adaptive budget allocation
 
+<!-- RECENT_CHANGES_START -->
+<!-- RECENT_CHANGES_END -->
+
 <a name="contributing"></a>
 ## 🤝 Contributing
 
