@@ -1,6 +1,6 @@
 [project]
 name = "mcp-webgate"
-version = "0.1.22"
+version = "0.1.26"
 description = "Denoised web search MCP server with context flooding protection"
 readme = "README.md"
 license = "MIT"
@@ -23,9 +23,6 @@ dependencies = [
     "lxml>=5.0",
     "pydantic>=2.0",
 ]
-
-[project.optional-dependencies]
-llm = ["anthropic>=0.40"]
 
 [project.urls]
 Homepage = "https://github.com/annibale-x/mcp-webgate"

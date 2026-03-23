@@ -22,7 +22,7 @@ async def expand_queries(query: str, n: int, client: LLMClient) -> list[str]:
         return [query]
 
     prompt = (
-        f"Generate up to{n - 1} complementary search queries for the following topic. "
+        f"Generate up to {n - 1} complementary search queries for the following topic. "
         "Each query should approach the topic from a different angle or add specificity. "
         "Output only a JSON array of strings, no explanation, no markdown.\n\n"
         f"Query: {query}"

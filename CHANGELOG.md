@@ -1,15 +1,45 @@
 # Changelog
 
-* 2026-03-23: v0.1.22 - TODO (Hannibal)
-  * feat(): TODO
+* 2026-03-23: v0.1.25 - Code quality, performance, and documentation improvements
+  * refactor(config): replace @field_validator boilerplate with Field constraints
+  * perf(cleaner): use str.translate() for typography normalization (O(n) vs 40+ sequential scans)
+  * fix(server): defer config initialization to main() — default instance at module level
+  * fix(llm): guard against empty choices in API response; fix missing space in expander prompt; improve summarizer wording
+  * refactor(query): extract _redistribute_budget as standalone helper
+  * fix(url): dedup_urls now returns sanitized URLs instead of originals
+  * chore(deps): remove unused [llm] optional-dependencies group
+  * docs(advanced): expand BM25 description; add column-legend table for adaptive budget log
+  * docs(contributing): add logging/debug guidance; redirect env var reference to README
+  * docs(readme): add LLM features decision table; fix MCP spec URL
+  * docs(agent): add Claude CLI version compatibility note
+  * docs(ide): simplify VSCode section
 
 
-* 2026-03-23: v0.1.21 - Build pipeline and publish fixes (Hannibal)
+* 2026-03-23: v0.1.24 - Stronger tool instructions and documentation cleanup
+  * feat(server): strengthen FastMCP instructions and onboarding to prevent native fetch fallback
+  * feat(server): add MANDATORY rules, why field, output_fields, and imperative docstrings
+  * docs(readme): add "Using webgate with local or smaller models" section with system prompt template
+  * docs(agent): add local models guidance pointing to README
+  * docs: remove Table of Contents blocks and HTML anchors from all documentation files
+
+
+* 2026-03-23: v0.1.23 - CI, dev tooling, and logging improvements
+  * feat(ci): add GitHub Actions cross-platform test workflow (Ubuntu, Windows, macOS)
+  * feat(robot): add `run` command to start server from local source via uv run
+  * feat(logger): replace "initialized" message with structured server startup summary
+  * feat(fetcher): expand UA pool from 20 to 40 entries
+
+
+* 2026-03-23: v0.1.22 - Update .gitignore
+  * chore(git): add uv.lock to .gitignore
+
+
+* 2026-03-23: v0.1.21 - Build pipeline and publish fixes
   * fix(robot): promote now runs build+test; build now runs test before packaging
   * fix(robot): uv pytest trampoline on Windows — switch to python -m pytest
   * fix(publish): use twine for .pypirc support; add twine to dev deps
   * fix(build): inject Recent Changes table into README before PyPI build, restore after
-  * fix(meta): remove 'claude' from package keywords
+  * chore(git): add .agent/, .claude/, .dev/ to .gitignore
 
 
 * 2026-03-23: v0.1.20 - Add full source to version control
@@ -48,16 +78,6 @@
   * feat(fetch): ceiling raised from max_result_length to max_query_budget — single-page fetch can now return up to 32k chars
   * feat(query): LLM summarization path now uses input_budget_factor (default 3×) for total input; per-page limit distributed from max_query_budget × factor
   * feat(config): add LLMConfig.input_budget_factor (float, default 3.0); env var WEBGATE_LLM_INPUT_BUDGET_FACTOR
-
----
-
-* 2026-03-22: v0.1.15 - TODO
-  * feat(): TODO
-
----
-
-* 2026-03-22: v0.1.14 - TODO
-  * feat(): TODO
 
 ---
 

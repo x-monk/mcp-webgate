@@ -1,3 +1,3 @@
 """mcp-webgate: Denoised web search MCP server."""
 
-__version__ = "0.1.22"
+__version__ = "0.1.24"

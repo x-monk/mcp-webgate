@@ -11,7 +11,7 @@ from mcp_webgate.scraper.fetcher import USER_AGENTS, _BACKOFF_DELAYS, _fetch_sin
 
 class TestUserAgents:
     def test_agent_list_not_empty(self):
-        assert len(USER_AGENTS) == 20
+        assert len(USER_AGENTS) == 40
 
     def test_all_agents_are_strings(self):
         for ua in USER_AGENTS:

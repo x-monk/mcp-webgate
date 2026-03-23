@@ -41,7 +41,7 @@ async def summarize_results(
         f"You are a research assistant. Based on the following search results for the query "
         f'"{query_str}", write a detailed report in Markdown (aim for at most {max_words} '
         f"words). Cite sources using their bracketed IDs like [1], [2], etc. "
-        f"Do not add commentary about the sources themselves nor information that aren't contained in the provided search results.\n\n"
+        f"Do not add commentary about the sources themselves, and only include information contained in the provided search results.\n\n"
         f"Search results:\n{context}"
     )
 

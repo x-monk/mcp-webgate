@@ -2,18 +2,10 @@
 
 This guide covers how to integrate mcp-webgate with CLI-based AI agents that support the Model Context Protocol (MCP).
 
-## 📋 Table of Contents
-
-- [🔧 Prerequisites](#prerequisites)
-- [♊ Gemini CLI](#gemini-cli)
-- [💻 Claude CLI](#claude-cli)
-- [🔍 Troubleshooting Common Issues](#troubleshooting-common-issues)
-
 > **Claude Desktop** is an IDE-class integration and is documented in the [IDE Integration Guide](./IDE.md).
 
 ---
 
-<a name="prerequisites"></a>
 ## 🔧 Prerequisites
 
 Make sure you have `uvx` available:
@@ -32,7 +24,6 @@ No Docker? Use a cloud backend — see [Backends](../../README.md#backends) for 
 
 ---
 
-<a name="gemini-cli"></a>
 ## ♊ Gemini CLI
 
 Google's command-line interface for Gemini AI.
@@ -126,10 +117,11 @@ Fetch the content of https://peps.python.org/pep-0517/
 
 ---
 
-<a name="claude-cli"></a>
 ## 💻 Claude CLI
 
 Anthropic's command-line interface for Claude AI.
+
+> **Note:** Claude CLI is under active development and flag names may change across versions. The examples below reflect typical usage — run `claude --help` to verify the exact flags supported by your installed version. If `--mcp-servers` is not recognized, check the [Claude CLI documentation](https://docs.anthropic.com/en/docs/claude-code/overview) for the current flag name.
 
 ### Prerequisites
 
@@ -206,7 +198,12 @@ export PATH="$HOME/bin:$PATH"
 
 ---
 
-<a name="troubleshooting-common-issues"></a>
+## 🔧 Using webgate with local or smaller models
+
+If your model ignores webgate and falls back to a built-in fetch tool, see [Using webgate with local or smaller models](../../README.md#local-models) in the main README for a ready-to-use system prompt you can add to your agent configuration.
+
+---
+
 ## 🔍 Troubleshooting Common Issues
 
 ### "command not found" / uvx not in PATH

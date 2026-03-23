@@ -2,34 +2,21 @@
 
 This document covers internal ranking mechanics and opt-in experimental features not documented in the main README.
 
-## 📋 Table of Contents
-
-- [🏆 Ranking Pipeline](#ranking-pipeline)
-  - [🔢 Tier 1 — Deterministic BM25](#tier-1--deterministic-bm25-rerank_deterministic)
-  - [🤖 Tier 2 — LLM-assisted reranking](#tier-2--llm-assisted-reranking-rerank_llm)
-- [🧪 Adaptive Budget Allocation (EXPERIMENTAL)](#experimental-adaptive-budget-allocation)
-  - [❓ The problem it solves](#the-problem-it-solves)
-  - [⚙️ How it works](#how-it-works)
-  - [🔍 Debug visibility (trace mode)](#debug-visibility-trace-mode)
-  - [📊 Worked example](#worked-example)
-  - [🔧 Config reference](#config-reference)
-  - [⚠️ Known limitations](#known-limitations)
-
----
-
 ## 🏆 Ranking Pipeline
 
 The query pipeline applies two independent reranking tiers after fetching and cleaning all pages. Tier 1 is always active; Tier 2 is opt-in.
 
 ### Tier 1 — Deterministic BM25 (`rerank_deterministic`)
 
-BM25 (Best Match 25) is a classic information-retrieval scoring function. For each fetched page, it computes a relevance score against the combined query text using term frequency (TF), inverse document frequency (IDF), and document length normalization.
+BM25 (Best Match 25) is a probabilistic keyword-overlap scoring function widely used in information retrieval. It measures how relevant a document is to a query based on how often the query terms appear in the document, how rare those terms are across the whole collection, and how long the document is. It does not understand semantics — a page about "async Python" will not match a query about "concurrent programming" unless those exact words appear.
+
+For each fetched page, it computes a relevance score against the combined query text using term frequency (TF), inverse document frequency (IDF), and document length normalization.
 
 **Document representation:** title + snippet + first 3000 chars of cleaned content. The window is large enough to capture the main body of most articles while still avoiding footer/boilerplate noise. When adaptive budget is active, pages are pre-cleaned with a generous `fetch_limit` before BM25 runs, so this window is filled with actual body text rather than just the search-engine snippet.
 
-**Parameters (hardcoded, tuned for web search):**
-- `k1 = 1.5` — controls TF saturation. A term appearing 10× is not 10× more relevant than one appearing 2×.
-- `b = 0.75` — length normalization weight. Long pages are penalized to avoid score inflation from sheer verbosity.
+**Tuning parameters (hardcoded, pre-tuned for web search):**
+- `k1 = 1.5` — TF saturation. A term appearing 10× in a page is not 10× more relevant than one appearing 2×; score growth diminishes as frequency increases.
+- `b = 0.75` — Length normalization weight. Long pages are penalized to avoid score inflation from sheer verbosity; short, keyword-dense pages score relatively higher.
 
 **Properties:**
 - Zero cost: no network calls, no LLM, pure Python math.
@@ -136,7 +123,18 @@ adaptive_budget | total_budget=96000  fetch_limit=24000  sources=20  Σbm25=61.2
   [ 3.84 |  6.3%]  init= 6018  Δ= -5968  alloc=   50  final=   50  reddit.com/...
 ```
 
-Columns: `[bm25_score | pct_of_total]  init=initial_alloc  Δ=redistribution_delta  alloc=final_alloc  final=actual_content_len`.
+**Column legend:**
+
+| Column | Meaning |
+|--------|---------|
+| `[8.18 \| 13.3%]` | BM25 score for this source and its percentage of the total score across all sources |
+| `init=12810` | Initial char allocation from Phase 3 (proportional to BM25 score) |
+| `Δ=+2930` | Budget change from surplus redistribution — positive means the source absorbed surplus from thinner pages |
+| `Δ=-5968` | Negative delta means this source donated surplus (its actual content was shorter than its allocation) |
+| `alloc=15740` | Final char allocation after redistribution |
+| `final=15740` | Actual content length after truncation to the final allocation |
+
+A source with `Δ < 0` was a thin page (failed fetch, paywalled, or just short). A source with a large `Δ > 0` was the main beneficiary — a long, keyword-dense page that was still truncated and absorbed the recovered budget.
 
 A large negative Δ indicates a source that donated surplus (failed fetch or thin page). A large positive Δ indicates a hungry source that absorbed the recovered budget.
 

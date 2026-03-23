@@ -3,7 +3,7 @@
 [![Python Version](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![MCP Protocol](https://img.shields.io/badge/MCP-Protocol-blueviolet)](https://spec.modelcontextprotocol.io/)
-[![Latest Release](https://img.shields.io/badge/release-v0.1.22-purple.svg)](https://github.com/annibale-x/mcp-webgate/releases/tag/v0.1.22)
+[![Latest Release](https://img.shields.io/badge/release-v0.1.24-purple.svg)](https://github.com/annibale-x/mcp-webgate/releases/tag/v0.1.24)
 
 Web search that doesn't wreck your AI's memory.
 
@@ -11,26 +11,6 @@ mcp-webgate is an MCP server that gives your AI clean, bounded web content — a
 - **IDEs**: Claude Desktop, Claude Code, Zed, Cursor, Windsurf, VSCode
 - **CLI Agents**: Gemini CLI, Claude CLI, custom agents
 
-## Table of Contents
-
-- [🌱 A Gentle Introduction](#a-gentle-introduction)
-- [🚀 Quick Start](#quick-start)
-- [🔍 How it works](#how-it-works)
-- [🛠️ Tools](#tools)
-- [🎛️ Tuning](#tuning)
-- [🤖 LLM Features](#llm-features)
-- [🔗 Integrations](#integrations)
-- [📦 Installation](#installation)
-- [⚙️ Full Configuration](#full-configuration)
-- [🔌 Backends](#backends)
-- [🐛 Debug mode](#debug-mode)
-- [🛡️ Protections summary](#protections-summary)
-- [📚 Documentation Structure](#documentation-structure)
-- [🤝 Contributing](#contributing)
-- [📄 License](#license)
-- [🔗 Links](#links)
-
-<a name="a-gentle-introduction"></a>
 ## 🌱 A Gentle Introduction
 
 **What is mcp-webgate?**
@@ -60,7 +40,6 @@ After LLM summary        5.8 KB   (    ~1,450 tokens)  — structured report wit
 
 This is an intensive case (5 queries × 5 results). A typical search with 3–5 results still saves 95%+ of context compared to raw fetching — and your AI gets structured, ranked content instead of a wall of HTML soup.
 
-<a name="quick-start"></a>
 ## 🚀 Quick Start
 
 ### 1. Make sure you have `uvx`
@@ -116,7 +95,6 @@ Search the web for: latest news on AI regulation
 
 The AI will use `webgate_query` automatically. You're done.
 
-<a name="how-it-works"></a>
 ## 🔍 How it works
 
 ```
@@ -137,7 +115,6 @@ Cap total output to budget
 Clean result lands in your AI's context
 ```
 
-<a name="tools"></a>
 ## 🛠️ Tools
 
 webgate gives your AI three tools:
@@ -215,7 +192,25 @@ Multiple queries run in parallel and are merged:
 
 Returns a JSON guide explaining how to use webgate effectively. The AI should call this once at the start of a session if in doubt about which tool to use.
 
-<a name="tuning"></a>
+## 🔧 Using webgate with local or smaller models
+
+Most frontier models follow MCP tool instructions automatically. Smaller or local models sometimes ignore the server-provided guidance and fall back to a built-in fetch tool instead — returning raw HTML that floods the context with noise.
+
+If you notice this happening, add an explicit instruction block to your system prompt:
+
+```
+You have access to webgate tools for web search and page retrieval.
+Follow these rules in every session:
+- To search the web: use webgate_query — never use a built-in fetch, browser, or HTTP tool
+- To retrieve a URL: use webgate_fetch — never fetch URLs directly
+- Built-in fetch tools return raw HTML that floods your context; webgate returns clean, bounded text
+At the start of each session, call webgate_onboarding to read the full operational guide.
+```
+
+This works because user system prompt instructions take precedence over MCP server-level guidance, making the constraint explicit at the highest-priority layer the model sees.
+
+> **Tip:** if your client supports named system prompts or prompt templates, save the block above as a reusable preset so you don't have to paste it every time.
+
 ## 🎛️ Tuning
 
 This section explains what the key parameters do and when to change them. The defaults work well for most cases — only tweak if you have a specific reason.
@@ -284,10 +279,22 @@ The secondary LLM sees much more content per page. Your primary AI sees only the
 | Pages are slow to download | Reduce `max_download_mb` (e.g. `1`, already default) |
 | Server downloads too much garbage | Reduce `max_download_mb` (e.g. `1`) |
 
-<a name="llm-features"></a>
 ## 🤖 LLM Features
 
 Optional, opt-in. When `llm.enabled = false` (the default), webgate is fully deterministic. Enable the `[llm]` block to unlock three extra capabilities.
+
+### 🤔 When to enable LLM features
+
+| Situation | Recommended setup | Typical latency overhead |
+|-----------|------------------|--------------------------|
+| Fast answers, general research | LLM **disabled** (default) — BM25-ranked clean sources, zero latency overhead | none |
+| Deep research on a complex topic | **Summarization on** — get a cited Markdown report instead of raw pages | +5–30s |
+| Broad topic, one query isn't enough | **Expansion + Summarization** — LLM generates variants and synthesizes all results | +6–35s |
+| Result order matters more than speed | **LLM reranking on** — semantic ordering at the cost of one extra LLM call per query | +1–5s |
+
+**Privacy:** with LLM disabled, no data leaves your machine except web requests. With LLM enabled, cleaned search results (not raw HTML) are sent to the configured `base_url`. Point it at a local Ollama instance to keep everything on-device.
+
+**Latency trade-off:** each enabled feature adds one LLM round-trip per query. Expansion adds ~1–5s; summarization adds ~5–30s depending on model and content volume. For interactive use, summarization with a fast local model (e.g. Gemma 3 4B) is a good starting point.
 
 ### Setup
 
@@ -348,7 +355,6 @@ LLM reranking adds latency proportional to your LLM response time. Enable it onl
 
 Pipeline: `clean → BM25 rerank → (LLM rerank) → (LLM summarize) → output`
 
-<a name="integrations"></a>
 ## 🔗 Integrations
 
 mcp-webgate works with all major AI clients:
@@ -364,7 +370,6 @@ mcp-webgate works with all major AI clients:
 | **Gemini CLI** | [Agent Integration](docs/integrations/AGENT.md#gemini-cli) | Google's CLI agent |
 | **Claude CLI** | [Agent Integration](docs/integrations/AGENT.md#claude-cli) | Anthropic's CLI agent |
 
-<a name="installation"></a>
 ## 📦 Installation
 
 ### Via uvx (recommended — no install needed)
@@ -381,7 +386,6 @@ pip install mcp-webgate
 uv add mcp-webgate
 ```
 
-<a name="full-configuration"></a>
 ## ⚙️ Full Configuration
 
 Ready-to-use config files are in [`examples/`](examples/).
@@ -524,7 +528,6 @@ Boolean flags support `--flag` / `--no-flag` syntax (e.g. `--llm-enabled`, `--no
 | `--llm-max-summary-words` | `WEBGATE_LLM_MAX_SUMMARY_WORDS` | `0` | Summary word target (0 = auto) |
 | `--llm-input-budget-factor` | `WEBGATE_LLM_INPUT_BUDGET_FACTOR` | `3` | LLM input budget multiplier |
 
-<a name="backends"></a>
 ## 🔌 Backends
 
 | Backend | Auth | Notes |
@@ -551,7 +554,6 @@ Exa uses neural (semantic) search by default — the primary reason to use it ov
 
 `engine` selects the underlying search engine (`google`, `bing`, `duckduckgo`, `yandex`, `yahoo`). `gl` and `hl` significantly affect result quality for non-English queries.
 
-<a name="debug-mode"></a>
 ## 🐛 Debug mode
 
 When enabled, every tool call logs a structured entry:
@@ -564,7 +566,6 @@ export WEBGATE_DEBUG=true             # log to stderr
 export WEBGATE_LOG_FILE=/tmp/wg.log  # or log to file
 ```
 
-<a name="protections-summary"></a>
 ## 🛡️ Protections summary
 
 These protections are always active — they are the core value proposition and cannot be disabled.
@@ -581,7 +582,6 @@ These protections are always active — they are the core value proposition and 
 | Rate limiting (429 / 502 / 503) | Exponential retry backoff, respects `Retry-After` header |
 | Unwanted domains | `blocked_domains` / `allowed_domains` filter |
 
-<a name="documentation-structure"></a>
 ## 📚 Documentation Structure
 
 ### Integration Guides
@@ -592,7 +592,6 @@ These protections are always active — they are the core value proposition and 
 <!-- RECENT_CHANGES_START -->
 <!-- RECENT_CHANGES_END -->
 
-<a name="contributing"></a>
 ## 🤝 Contributing
 
 Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines on:
@@ -602,18 +601,16 @@ Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for det
 - Documentation standards
 - Pull request process
 
-<a name="license"></a>
 ## 📄 License
 
 MIT License — see [LICENSE](LICENSE) for details.
 
-<a name="links"></a>
 ## 🔗 Links
 
 - **[GitHub Repository](https://github.com/annibale-x/mcp-webgate)** — Source code and issues
-- **[MCP Protocol](https://spec.modelcontextprotocol.io/)** — Model Context Protocol specification
 - **[PyPI Package](https://pypi.org/project/mcp-webgate/)** — Python Package Index
 - **[MCP Registry](https://registry.modelcontextprotocol.io/?q=mcp-webgate&all=1)** — Model Context Protocol Registry
+- **[MCP Protocol](https://modelcontextprotocol.io/specification/2025-11-25)** — Model Context Protocol specification
 
 ---
 
