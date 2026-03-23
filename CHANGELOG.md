@@ -1,5 +1,11 @@
 # Changelog
 
+* 2026-03-23: v0.1.20 - Add full source to version control
+  * chore(git): track all source files — backends, scraper, llm, tools, utils, tests, docs
+  * chore(git): add .agent/, .claude/, .dev/ to .gitignore
+
+---
+
 * 2026-03-23: v0.1.19 - Documentation overhaul and build improvements
   * docs(plan): complete rewrite of PLAN.md — fix all stale defaults, wrong signatures, outdated roadmap; add emoji TOC, query pipeline section, LLM integration section
   * docs(readme): add adaptive_budget to config table and webgate.toml example; fix --trace description; add ADVANCED.md to documentation structure; clarify Exa use_autoprompt wording
