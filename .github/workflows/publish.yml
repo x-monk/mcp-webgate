@@ -37,7 +37,9 @@ jobs:
           TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
 
       - name: Install mcp-publisher
-        run: pip install mcp-publisher
+        run: |
+          curl -fsSL https://github.com/modelcontextprotocol/registry/releases/download/v1.5.0/mcp-publisher_linux_amd64.tar.gz \
+            | tar -xz -C /usr/local/bin mcp-publisher
 
       - name: Publish to MCP Registry
         run: mcp-publisher publish
