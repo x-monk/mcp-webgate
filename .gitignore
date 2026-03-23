@@ -214,3 +214,7 @@ __marimo__/
 .agent/
 .claude/
 .dev/
+
+# Local dev/AI assistant files
+CLAUDE.md
+PLAN.md
