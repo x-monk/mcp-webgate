@@ -1,5 +1,9 @@
 # Changelog
 
+* 2026-03-23: v0.1.28 - TODO (Hannibal)
+  * feat(): TODO
+
+
 * 2026-03-23: v0.1.27 - Package metadata and beta release
   * chore(meta): promote development status to Beta
   * chore(meta): update description to "Web search that doesn't wreck your AI's memory."
