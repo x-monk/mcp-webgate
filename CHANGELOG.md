@@ -1,5 +1,9 @@
 # Changelog
 
+* 2026-03-23: v0.1.21 - TODO (Hannibal)
+  * feat(): TODO
+
+
 * 2026-03-23: v0.1.20 - Add full source to version control
   * chore(git): track all source files — backends, scraper, llm, tools, utils, tests, docs
   * chore(git): add .agent/, .claude/, .dev/ to .gitignore
