@@ -9,6 +9,7 @@ Commands:
   bump [X.Y.Z]        Bump version and commit on dev branch
   promote             Merge dev->main, tag, push, checkout dev
   publish [-t/--test] Publish to PyPI (or TestPyPI with -t/--test)
+  run [ARGS...]       Start mcp-webgate from local source (uv run)
   query QUERY         Run webgate_query and print JSON results
 """
 
@@ -370,6 +371,13 @@ def cmd_install(args: argparse.Namespace) -> None:
     info(f"mcp-webgate v{version} installed as uv tool.")
 
 
+def cmd_run(args: argparse.Namespace) -> None:
+    """Start the MCP server from local source via uv run."""
+    cmd = ["uv", "run", "mcp-webgate"] + args.extra
+    info("Starting mcp-webgate from local source …")
+    run(cmd, check=False)
+
+
 def cmd_query(args: argparse.Namespace) -> None:
     """Execute a webgate_query using the local config and print results as JSON."""
     import asyncio
@@ -459,6 +467,14 @@ def main() -> None:
     sub.add_parser("install", help="Uninstall, clean, rebuild, and install as uv tool")
     sub.add_parser("promote", help="Merge dev->main, tag, push, checkout dev")
 
+    p_run = sub.add_parser("run", help="Start mcp-webgate from local source (uv run)")
+    p_run.add_argument(
+        "extra",
+        nargs=argparse.REMAINDER,
+        metavar="ARGS",
+        help="Extra args forwarded to mcp-webgate (e.g. --debug --llm-enabled)",
+    )
+
     p_pub = sub.add_parser("publish", help="Publish to PyPI")
     p_pub.add_argument(
         "-t", "--test",
@@ -489,13 +505,19 @@ def main() -> None:
         help="Backend to use: searxng|brave|tavily|exa|serpapi (default: config value)",
     )
 
-    args = parser.parse_args()
+    # parse_known_args to allow passthrough flags for the 'run' subcommand.
+    # For all other commands, unknown args are treated as an error.
+    args, extra = parser.parse_known_args()
+    if extra and args.command != "run":
+        parser.error(f"unrecognized arguments: {' '.join(extra)}")
+    args.extra = extra
 
     dispatch = {
         "test": cmd_test,
         "build": cmd_build,
         "bump": cmd_bump,
         "install": cmd_install,
+        "run": cmd_run,
         "status": cmd_status,
         "promote": cmd_promote,
         "publish": cmd_publish,

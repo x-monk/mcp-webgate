@@ -11,6 +11,7 @@
   - [bump](#bump)
   - [status](#status)
   - [install](#install)
+  - [run](#run)
   - [promote](#promote)
   - [publish](#publish)
   - [query](#query)
@@ -104,6 +105,32 @@ Uninstalls `mcp-webgate` as a `uv tool`, clears the cache, rebuilds the wheel, a
 ```
 python scripts/robot.py install
 ```
+
+---
+
+### run
+
+Starts the MCP server directly from local source using `uv run`. This is the recommended way to run the server during development: no build or install step required, changes to `.py` files are picked up immediately on next restart.
+
+```
+python scripts/robot.py run [ARGS...]
+```
+
+Any extra arguments are forwarded verbatim to `mcp-webgate`.
+
+| Argument | Description |
+|----------|-------------|
+| `ARGS`   | Optional CLI args passed through to the server (e.g. `--debug`, `--llm-enabled`) |
+
+**Examples:**
+
+```bash
+python scripts/robot.py run
+python scripts/robot.py run --debug --log-file %TEMP%/webgate.log
+python scripts/robot.py run --debug --llm-enabled --llm-model gemma3:27b --default-backend searxng
+```
+
+> **Note:** Use `install` instead when you want to test the server as an installed tool (i.e. the exact artifact that will be published to PyPI).
 
 ---
 
