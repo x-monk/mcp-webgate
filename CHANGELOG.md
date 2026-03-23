@@ -1,6 +1,14 @@
 # Changelog
 
-* 2026-03-23: v0.1.23 - CI, dev tooling, and logging improvements (Hannibal)
+* 2026-03-23: v0.1.24 - Stronger tool instructions and documentation cleanup
+  * feat(server): strengthen FastMCP instructions and onboarding to prevent native fetch fallback
+  * feat(server): add MANDATORY rules, why field, output_fields, and imperative docstrings
+  * docs(readme): add "Using webgate with local or smaller models" section with system prompt template
+  * docs(agent): add local models guidance pointing to README
+  * docs: remove Table of Contents blocks and HTML anchors from all documentation files
+
+
+* 2026-03-23: v0.1.23 - CI, dev tooling, and logging improvements
   * feat(ci): add GitHub Actions cross-platform test workflow (Ubuntu, Windows, macOS)
   * feat(robot): add `run` command to start server from local source via uv run
   * feat(logger): replace "initialized" message with structured server startup summary

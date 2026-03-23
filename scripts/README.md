@@ -2,21 +2,6 @@
 
 `robot.py` is the project automation tool for `mcp-webgate`. It handles testing, building, versioning, releases, and development queries.
 
-## 📋 Table of Contents
-
-- [🚀 Usage](#-usage)
-- [🔧 Commands](#-commands)
-  - [test](#test)
-  - [build](#build)
-  - [bump](#bump)
-  - [status](#status)
-  - [install](#install)
-  - [run](#run)
-  - [promote](#promote)
-  - [publish](#publish)
-  - [query](#query)
-- [🔄 Release workflow](#-release-workflow)
-
 ## 🚀 Usage
 
 ```

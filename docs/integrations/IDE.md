@@ -2,21 +2,6 @@
 
 This guide covers how to integrate mcp-webgate with IDEs and desktop AI clients that support the Model Context Protocol (MCP).
 
-## 📋 Table of Contents
-
-- [🔧 Prerequisites](#prerequisites)
-- [🖥️ Claude Desktop](#claude-desktop)
-- [💻 Claude Code](#claude-code)
-- [⚡ Zed Editor](#zed-editor)
-- [🖱️ Cursor](#cursor)
-- [🌊 Windsurf](#windsurf)
-- [🔷 VSCode](#vscode)
-- [🖥️ Multi-instance setup (CLI args)](#multi-instance-setup)
-- [🔍 Troubleshooting Common Issues](#troubleshooting-common-issues)
-
----
-
-<a name="prerequisites"></a>
 ## 🔧 Prerequisites
 
 Before configuring any IDE, make sure you have `uvx` available:
@@ -37,7 +22,6 @@ No Docker? Use a cloud backend instead — see [Backends](../../README.md#backen
 
 ---
 
-<a name="claude-desktop"></a>
 ## 🖥️ Claude Desktop
 
 Anthropic's desktop application for Claude AI.
@@ -123,7 +107,6 @@ which uvx
 
 ---
 
-<a name="claude-code"></a>
 ## 💻 Claude Code
 
 Anthropic's CLI-based coding agent (this tool).
@@ -159,7 +142,6 @@ Fetch the content of https://docs.python.org/3/library/asyncio.html
 
 ---
 
-<a name="zed-editor"></a>
 ## ⚡ Zed Editor
 
 High-performance, multiplayer code editor with native MCP support.
@@ -196,7 +178,6 @@ Open Settings (`Cmd+,` on macOS / `Ctrl+,` on Linux/Windows) and add to `~/.conf
 
 ---
 
-<a name="cursor"></a>
 ## 🖱️ Cursor
 
 AI-powered code editor. MCP tools require **Agent mode**.
@@ -237,7 +218,6 @@ Search the web for recent changes to the React hooks API
 
 ---
 
-<a name="windsurf"></a>
 ## 🌊 Windsurf
 
 Modern code editor with AI integration.
@@ -268,7 +248,6 @@ Windsurf uses a single global configuration file:
 
 ---
 
-<a name="vscode"></a>
 ## 🔷 VSCode
 
 Visual Studio Code via GitHub Copilot Chat (VS Code 1.99+) or a standalone MCP extension.
@@ -323,7 +302,6 @@ MCP tools work in **Agent mode**:
 
 ---
 
-<a name="multi-instance-setup"></a>
 ## 🖥️ Multi-instance setup (CLI args)
 
 Running webgate in multiple IDEs simultaneously (e.g. Zed + Cursor)? Use **CLI arguments** instead of env vars. Each instance gets its own config without conflicts — and integers stay integers, no string-wrapping needed.
@@ -353,7 +331,6 @@ Full reference: `uvx mcp-webgate --help`
 
 ---
 
-<a name="troubleshooting-common-issues"></a>
 ## 🔍 Troubleshooting Common Issues
 
 ### "command not found" / "spawn ENOENT"

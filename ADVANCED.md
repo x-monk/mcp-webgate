@@ -2,21 +2,6 @@
 
 This document covers internal ranking mechanics and opt-in experimental features not documented in the main README.
 
-## 📋 Table of Contents
-
-- [🏆 Ranking Pipeline](#ranking-pipeline)
-  - [🔢 Tier 1 — Deterministic BM25](#tier-1--deterministic-bm25-rerank_deterministic)
-  - [🤖 Tier 2 — LLM-assisted reranking](#tier-2--llm-assisted-reranking-rerank_llm)
-- [🧪 Adaptive Budget Allocation (EXPERIMENTAL)](#experimental-adaptive-budget-allocation)
-  - [❓ The problem it solves](#the-problem-it-solves)
-  - [⚙️ How it works](#how-it-works)
-  - [🔍 Debug visibility (trace mode)](#debug-visibility-trace-mode)
-  - [📊 Worked example](#worked-example)
-  - [🔧 Config reference](#config-reference)
-  - [⚠️ Known limitations](#known-limitations)
-
----
-
 ## 🏆 Ranking Pipeline
 
 The query pipeline applies two independent reranking tiers after fetching and cleaning all pages. Tier 1 is always active; Tier 2 is opt-in.

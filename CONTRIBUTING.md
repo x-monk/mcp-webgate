@@ -2,25 +2,6 @@
 
 ---
 
-## Table of Contents
-
-- [Project overview](#project-overview)
-- [Prerequisites](#prerequisites)
-- [Setup](#setup)
-- [Project structure](#project-structure)
-- [Daily commands](#daily-commands)
-- [Configuration](#configuration)
-- [LLM features](#llm-features)
-- [Anti-flooding protections](#anti-flooding-protections)
-- [Adding a new backend](#adding-a-new-backend)
-- [Testing](#testing)
-- [CI](#ci)
-- [Release workflow](#release-workflow)
-- [Code style](#code-style)
-- [Roadmap](#roadmap)
-
----
-
 ## Project overview
 
 `mcp-webgate` is a denoised web search MCP server written in Python. It exposes three tools to any MCP-compatible host (Claude Code, Zed, Cursor, etc.):
