@@ -1,6 +1,14 @@
 # Changelog
 
-* 2026-03-22: v0.1.17 - Float→int in config, Quick Start, sezione Tuning nel README (Hannibal)
+* 2026-03-23: v0.1.18 - Adaptive budget allocation (EXPERIMENTAL)
+  * feat(reranker): add rerank_with_scores() — returns BM25 scores alongside ranked sources
+  * feat(query): EXPERIMENTAL adaptive_budget — proportional char allocation based on BM25 scores; top-ranked sources receive up to fetch_factor× more chars
+  * feat(config): add server.adaptive_budget (bool, default false) and server.adaptive_budget_fetch_factor (int, default 3)
+  * docs: add ADVANCED.md covering BM25 tier-1, LLM tier-2 reranking, and adaptive budget mechanics
+
+---
+
+* 2026-03-22: v0.1.17 - Float→int in config, Quick Start, sezione Tuning nel README
   * refactor(config): max_download_mb, search_timeout, llm.timeout, llm.input_budget_factor da float a int
   * docs(readme): aggiunta sezione Quick Start (step-by-step per nuovi utenti)
   * docs(readme): aggiunta sezione Tuning con tabelle budget fetch/query/LLM
@@ -9,24 +17,24 @@
 
 ---
 
-* 2026-03-22: v0.1.16 - Budget asimmetrico fetch/query e LLM input factor (Hannibal)
+* 2026-03-22: v0.1.16 - Budget asimmetrico fetch/query e LLM input factor
   * feat(fetch): ceiling raised from max_result_length to max_query_budget — single-page fetch can now return up to 32k chars
   * feat(query): LLM summarization path now uses input_budget_factor (default 3×) for total input; per-page limit distributed from max_query_budget × factor
   * feat(config): add LLMConfig.input_budget_factor (float, default 3.0); env var WEBGATE_LLM_INPUT_BUDGET_FACTOR
 
 ---
 
-* 2026-03-22: v0.1.15 - TODO (Hannibal)
+* 2026-03-22: v0.1.15 - TODO
   * feat(): TODO
 
 ---
 
-* 2026-03-22: v0.1.14 - TODO (Hannibal)
+* 2026-03-22: v0.1.14 - TODO
   * feat(): TODO
 
 ---
 
-* 2026-03-22: v0.1.13 - Per-query debug grouping and aligned log output (Hannibal)
+* 2026-03-22: v0.1.13 - Per-query debug grouping and aligned log output
   * feat(logger): group fetch rows by originating query when expansion/multi-query active
   * feat(logger): fix [fail] row alignment — ms column now matches [ok] rows via fixed-width data_str
   * feat(logger): summary line now shows raw/clean/output (output=summary KB if LLM, else =clean)
@@ -35,7 +43,7 @@
 
 ---
 
-* 2026-03-22: v0.1.12 - Detailed debug logging and Zed config (Hannibal)
+* 2026-03-22: v0.1.12 - Detailed debug logging and Zed config
   * feat(logger): multi-line query log with timing breakdown (expand/search/fetch/total), per-URL fetch rows (raw KB → clean KB, elapsed ms), and totals summary
   * feat(fetcher): _fetch_single now returns (html, elapsed_ms, raw_bytes) tuple; fetch_urls returns (html_map, timing_map)
   * feat(query): timing checkpoints for expansion, search, fetch phases; fetch_details collected during assembly
@@ -48,7 +56,7 @@
 
 ---
 
-* 2026-03-22: v0.1.11 - num_results_per_query semantic (Hannibal)
+* 2026-03-22: v0.1.11 - num_results_per_query semantic
   * feat(query): rename num_results → num_results_per_query; total = per_query × num_queries bounded by max_total_results (e.g. 3 queries × 5 = 15 results)
   * feat(query): num_results_per_query added to stats output
   * feat(server): query tool parameter and docstring updated; onboarding updated with new param and summarize param
@@ -57,14 +65,14 @@
 
 ---
 
-* 2026-03-22: v0.1.10 - Documentation overhaul (Hannibal)
+* 2026-03-22: v0.1.10 - Documentation overhaul
   * docs(readme): Gentle Introduction — context flooding problem, pipeline diagram, summarization advantage with self-hosted models
   * docs(readme): full Phase 4 LLM features section (expansion, summarization, reranking); TOC; emoji topic headers
   * docs(contributing): updated project structure (llm/ module, utils/reranker.py, correct test files); LLM config and env vars; anti-flooding table updated with retry backoff row; release workflow reflects bump→push and README badge update; testing patterns for async context managers and MagicMock vs AsyncMock; TOC; emoji headers
 
 ---
 
-* 2026-03-22: v0.1.9 - Test suite warning cleanup (Hannibal)
+* 2026-03-22: v0.1.9 - Test suite warning cleanup
   * fix(test_llm): proper async context manager mocking — __aenter__/__aexit__ set explicitly, no more internal coroutine leak
   * fix(test_fetcher): response objects changed from AsyncMock to MagicMock; only actually-awaited methods (aclose, send) stay AsyncMock
   * chore(pytest): filterwarnings for known CPython 3.11 AsyncMock _execute_mock_call issue (github.com/python/cpython/issues/91610)
@@ -72,12 +80,12 @@
 
 ---
 
-* 2026-03-22: v0.1.8 - Live LLM integration tests (Hannibal)
+* 2026-03-22: v0.1.8 - Live LLM integration tests
   * test(integration): test_integration_llm.py — 10 live tests against Ollama (gemma3:27b): LLMClient chat, expander variants, summarizer citations, LLM reranker relevance; auto-skip if Ollama unreachable
 
 ---
 
-* 2026-03-22: v0.1.7 - Phase 4 — External LLM client (Hannibal)
+* 2026-03-22: v0.1.7 - Phase 4 — External LLM client
   * feat(llm): LLMClient — async OpenAI-compatible /v1/chat/completions client (httpx, no SDK)
   * feat(llm): expander.py — single-query auto-expansion to N complementary queries via LLM
   * feat(llm): summarizer.py — Markdown summary with inline citations; receives full cleaned text (generous input_limit), max_result_length becomes output target guideline
@@ -91,14 +99,14 @@
 
 ---
 
-* 2026-03-22: v0.1.6 - robot.py hardening, Phase 4 pipeline design (Hannibal)
+* 2026-03-22: v0.1.6 - robot.py hardening, Phase 4 pipeline design
   * chore(robot): update README release badge on bump
   * chore(robot): auto-push dev to origin after bump commit
   * docs(plan): Phase 4 LLM pipeline redesign — reranker two-tier (deterministic BM25 always active, LLM opt-in), summarizer receives generous input (max_result_length becomes output target), extractor moved to "Ideas to evaluate" section with cost/benefit analysis
 
 ---
 
-* 2026-03-22: v0.1.5 - Multi-query tool interface, onboarding tool (Hannibal)
+* 2026-03-22: v0.1.5 - Multi-query tool interface, onboarding tool
   * feat(query): queries parameter accepts str | list[str] — model passes queries directly, no server-side LLM
   * feat(query): max_queries config cap (default 5) — silently truncates overlength lists
   * feat(query): output field renamed query_used -> queries
@@ -109,7 +117,7 @@
 
 ---
 
-* 2026-03-22: v0.1.4 - Multi-query parallel merging (Hannibal)
+* 2026-03-22: v0.1.4 - Multi-query parallel merging
   * fix(query): all expanded queries now run in parallel via asyncio.gather (was: only queries[0] used)
   * feat(query): results from multiple queries merged in round-robin order to avoid single-query dominance
   * feat(query): query_used is a list when expansion returns multiple queries, string when single
@@ -117,7 +125,7 @@
 
 ---
 
-* 2026-03-22: v0.1.3 - Retry backoff, domain filter (Hannibal)
+* 2026-03-22: v0.1.3 - Retry backoff, domain filter
   * feat(fetcher): exponential retry backoff on 429/502/503 with Retry-After header support
   * feat(url): is_domain_allowed() — blocklist and allowlist with subdomain matching
   * feat(fetch): domain filter applied before network request
@@ -128,7 +136,7 @@
 
 ---
 
-* 2026-03-22: v0.1.2 - Typography normalization, sliding window, query budget (Hannibal)
+* 2026-03-22: v0.1.2 - Typography normalization, sliding window, query budget
   * feat(cleaner): normalize_typography() — smart quotes, em/en dash, ellipsis, ligatures, soft hyphen
   * feat(cleaner): sliding window truncation on line boundaries instead of hard char cut
   * feat(query): max_query_budget — distributes total char budget evenly across results
@@ -140,7 +148,7 @@
 
 ---
 
-* 2026-03-22: v0.1.1 - Multi-backend, debug mode, Phase 2+3 (Hannibal)
+* 2026-03-22: v0.1.1 - Multi-backend, debug mode, Phase 2+3
   * feat(backends): Brave Search API backend with safesearch and lang support
   * feat(backends): Tavily Search API backend with configurable search_depth
   * feat(backends): Exa neural search backend (useAutoprompt always disabled)
@@ -161,7 +169,7 @@
 
 ---
 
-* 2026-03-21: v0.1.0 - Initial MVP (Hannibal)
+* 2026-03-21: v0.1.0 - Initial MVP
   * feat(server): MCP entry point with `fetch` and `query` tools via FastMCP
   * feat(config): Pydantic config system with env vars, webgate.toml, and defaults
   * feat(cleaner): lxml XPath pipeline + regex sterilization (unicode, BiDi, noise lines)

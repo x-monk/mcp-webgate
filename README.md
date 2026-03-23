@@ -3,31 +3,37 @@
 [![Python Version](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![MCP Protocol](https://img.shields.io/badge/MCP-Protocol-blueviolet)](https://spec.modelcontextprotocol.io/)
-[![Latest Release](https://img.shields.io/badge/release-v0.1.17-purple.svg)](https://github.com/annibale-x/mcp-webgate/releases/tag/v0.1.17)
+[![Latest Release](https://img.shields.io/badge/release-v0.1.18-purple.svg)](https://github.com/annibale-x/mcp-webgate/releases/tag/v0.1.18)
 
 Web search that doesn't wreck your AI's memory.
 
----
+mcp-webgate is an MCP server that gives your AI clean, bounded web content — across all major AI clients:
+- **IDEs**: Claude Desktop, Claude Code, Zed, Cursor, Windsurf, VSCode
+- **CLI Agents**: Gemini CLI, Claude CLI, custom agents
 
 ## Table of Contents
 
-- [What is this?](#what-is-this)
-- [Quick Start](#quick-start)
-- [How it works](#how-it-works)
-- [Tools](#tools)
-- [Tuning](#tuning)
-- [LLM Features](#llm-features)
-- [Installation](#installation)
-- [Full Configuration](#full-configuration)
-- [Backends](#backends)
-- [Debug mode](#debug-mode)
-- [Protections summary](#protections-summary)
-- [License](#license)
+- [🌱 A Gentle Introduction](#a-gentle-introduction)
+- [🚀 Quick Start](#quick-start)
+- [🔍 How it works](#how-it-works)
+- [🛠️ Tools](#tools)
+- [🎛️ Tuning](#tuning)
+- [🤖 LLM Features](#llm-features)
+- [🔗 Integrations](#integrations)
+- [📦 Installation](#installation)
+- [⚙️ Full Configuration](#full-configuration)
+- [🔌 Backends](#backends)
+- [🐛 Debug mode](#debug-mode)
+- [🛡️ Protections summary](#protections-summary)
+- [📚 Documentation Structure](#documentation-structure)
+- [🤝 Contributing](#contributing)
+- [📄 License](#license)
+- [🔗 Links](#links)
 
----
+<a name="a-gentle-introduction"></a>
+## 🌱 A Gentle Introduction
 
-## What is this?
-
+**What is mcp-webgate?**
 When your AI uses a standard "fetch URL" tool, it gets the raw HTML of the page — ads, menus, scripts, cookie banners and all. A single news article can dump **200,000 tokens** of garbage into the AI's memory, wiping out your entire conversation.
 
 **mcp-webgate** is a protective filter that sits between your AI and the web:
@@ -38,11 +44,26 @@ When your AI uses a standard "fetch URL" tool, it gets the raw HTML of the page 
 
 The result: clean, bounded, useful web content — always.
 
----
+### 🔬 Real example: what happens under the hood
 
-## Quick Start
+Searching for *"mcp model context protocol"* with LLM features on:
 
-**Step 1 — Make sure you have `uvx`**
+```
+Query → LLM expands to 5 search variants → 20 pages found, 13 fetched in parallel
+
+Raw HTML downloaded     5.16 MB   (~1,290,000 tokens)
+After cleaning          52.1 KB   (   ~13,000 tokens)  — 99% noise stripped
+After LLM summary        5.8 KB   (    ~1,450 tokens)  — structured report with citations
+```
+
+**13 sources distilled into ~1,450 tokens.** A single naive fetch of just *one* of those pages (e.g. a security blog at 563 KB) would dump **~140,000 tokens** of raw HTML into your AI's context. webgate processes all 13 and delivers a clean briefing that fits in a footnote.
+
+This is an intensive case (5 queries × 5 results). A typical search with 3–5 results still saves 95%+ of context compared to raw fetching — and your AI gets structured, ranked content instead of a wall of HTML soup.
+
+<a name="quick-start"></a>
+## 🚀 Quick Start
+
+### 1. Make sure you have `uvx`
 
 ```bash
 pip install uv
@@ -50,7 +71,7 @@ pip install uv
 
 `uvx` runs Python tools without installing them permanently. You only need to do this once.
 
-**Step 2 — Set up a search backend**
+### 2. Set up a search backend
 
 The easiest option is **SearXNG** — free, no account, runs locally:
 
@@ -60,11 +81,9 @@ docker run -d -p 8080:8080 --name searxng searxng/searxng
 
 No Docker? Use a cloud backend instead (Brave, Tavily, Exa, SerpAPI) — see [Backends](#backends).
 
-**Step 3 — Add webgate to your AI client**
+### 3. Add webgate to your AI client
 
-Pick your client and paste the config. Restart the client afterward.
-
-### Claude Desktop
+See the [Integrations](#integrations) table for your specific client. As a quick example, for **Claude Desktop**:
 
 Open the config file:
 - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
@@ -87,55 +106,18 @@ Add this:
 }
 ```
 
-### Claude Code
+Restart the client after editing.
 
-Create `.mcp.json` in your project folder:
-
-```json
-{
-  "mcpServers": {
-    "webgate": {
-      "command": "uvx",
-      "args": ["mcp-webgate"],
-      "env": {
-        "WEBGATE_DEFAULT_BACKEND": "searxng",
-        "WEBGATE_SEARXNG_URL": "http://localhost:8080"
-      }
-    }
-  }
-}
-```
-
-### Zed
-
-Open Settings (`Ctrl+Shift+P` → *Open settings file*) and add:
-
-```json
-{
-  "context_servers": {
-    "webgate": {
-      "command": "uvx",
-      "args": ["mcp-webgate"],
-      "env": {
-        "WEBGATE_DEFAULT_BACKEND": "searxng",
-        "WEBGATE_SEARXNG_URL": "http://localhost:8080"
-      }
-    }
-  }
-}
-```
-
-**Step 4 — Ask your AI to search!**
+### 4. Ask your AI to search!
 
 ```
 Search the web for: latest news on AI regulation
 ```
 
-The AI will use `webgate_query` automatically. You're done. 🎉
+The AI will use `webgate_query` automatically. You're done.
 
----
-
-## How it works
+<a name="how-it-works"></a>
+## 🔍 How it works
 
 ```
 Your question
@@ -155,9 +137,8 @@ Cap total output to budget
 Clean result lands in your AI's context
 ```
 
----
-
-## Tools
+<a name="tools"></a>
+## 🛠️ Tools
 
 webgate gives your AI three tools:
 
@@ -234,9 +215,8 @@ Multiple queries run in parallel and are merged:
 
 Returns a JSON guide explaining how to use webgate effectively. The AI should call this once at the start of a session if in doubt about which tool to use.
 
----
-
-## Tuning
+<a name="tuning"></a>
+## 🎛️ Tuning
 
 This section explains what the key parameters do and when to change them. The defaults work well for most cases — only tweak if you have a specific reason.
 
@@ -252,15 +232,11 @@ webgate measures text in **characters** (not tokens). A rough conversion for Eng
 | 32,000 | ~8,000 |
 | 96,000 | ~24,000 |
 
----
-
 ### `webgate_fetch` budget
 
 When you fetch a single URL, the ceiling is `max_query_budget` (default **32,000 chars**). The tool parameter `max_chars` can request less, but never more than this ceiling.
 
 **Why `max_query_budget` and not `max_result_length`?** Because you're fetching one page — the "total output" IS that one page, so the right limit is the overall context budget, not the per-page cap designed for multi-source queries.
-
----
 
 ### `webgate_query` budget — without LLM
 
@@ -277,8 +253,6 @@ With no LLM, the cleaned sources go directly to your AI's context. webgate distr
 | 20 | 1,600 | ≤ 32,000 |
 
 The total output is always at most `max_query_budget`, regardless of how many results you request — the per-page share automatically shrinks to compensate.
-
----
 
 ### `webgate_query` budget — with LLM summarization
 
@@ -298,8 +272,6 @@ webgate scales up the input using `input_budget_factor` (default **3**):
 
 The secondary LLM sees much more content per page. Your primary AI sees only the final report — typically **1,000–3,000 tokens** — regardless of how many sources were processed. This is the main efficiency advantage of LLM mode.
 
----
-
 ### Quick tuning guide
 
 | Symptom | Fix |
@@ -312,9 +284,8 @@ The secondary LLM sees much more content per page. Your primary AI sees only the
 | Pages are slow to download | Reduce `max_download_mb` (e.g. `1`, already default) |
 | Server downloads too much garbage | Reduce `max_download_mb` (e.g. `1`) |
 
----
-
-## LLM Features
+<a name="llm-features"></a>
+## 🤖 LLM Features
 
 Optional, opt-in. When `llm.enabled = false` (the default), webgate is fully deterministic. Enable the `[llm]` block to unlock three extra capabilities.
 
@@ -342,8 +313,6 @@ Or with env vars:
 
 `base_url` accepts any OpenAI-compatible endpoint: **OpenAI**, **Ollama**, **LM Studio**, **vLLM**, **Together AI**, **Groq**, and others.
 
----
-
 ### Query expansion
 
 When you send a single query and `expansion_enabled = true`, the LLM automatically generates complementary search variants before hitting the backend. If you already pass multiple queries, this step is skipped.
@@ -357,8 +326,6 @@ When you send a single query and `expansion_enabled = true`, the LLM automatical
 
 Falls back silently to your original query if the LLM fails.
 
----
-
 ### Summarization
 
 When `summarization_enabled = true`, the LLM reads all fetched pages and writes a structured Markdown report with inline citations. Your AI receives the report instead of the raw text.
@@ -367,8 +334,6 @@ When `summarization_enabled = true`, the LLM reads all fetched pages and writes 
 - **Failure**: `llm_summary_error` with the reason + full `sources` as fallback (your AI can still work with the cleaned content)
 
 The report length target is `max_summary_words`. When `0` (default), it is derived from `max_query_budget / 5` — e.g. with a 32k budget, the target is ~6,400 words.
-
----
 
 ### Reranking
 
@@ -383,9 +348,24 @@ LLM reranking adds latency proportional to your LLM response time. Enable it onl
 
 Pipeline: `clean → BM25 rerank → (LLM rerank) → (LLM summarize) → output`
 
----
+<a name="integrations"></a>
+## 🔗 Integrations
 
-## Installation
+mcp-webgate works with all major AI clients:
+
+| Platform | Configuration Guide | Notes |
+|----------|---------------------|-------|
+| **Claude Desktop** | [IDE Integration](docs/integrations/IDE.md#claude-desktop) | Desktop application |
+| **Claude Code** | [IDE Integration](docs/integrations/IDE.md#claude-code) | CLI coding agent |
+| **Zed Editor** | [IDE Integration](docs/integrations/IDE.md#zed-editor) | Native MCP support |
+| **Cursor** | [IDE Integration](docs/integrations/IDE.md#cursor) | Requires Agent mode |
+| **Windsurf** | [IDE Integration](docs/integrations/IDE.md#windsurf) | Global config only |
+| **VSCode** | [IDE Integration](docs/integrations/IDE.md#vscode) | Via Copilot or MCP extension |
+| **Gemini CLI** | [Agent Integration](docs/integrations/AGENT.md#gemini-cli) | Google's CLI agent |
+| **Claude CLI** | [Agent Integration](docs/integrations/AGENT.md#claude-cli) | Anthropic's CLI agent |
+
+<a name="installation"></a>
+## 📦 Installation
 
 ### Via uvx (recommended — no install needed)
 
@@ -401,21 +381,26 @@ pip install mcp-webgate
 uv add mcp-webgate
 ```
 
----
-
-## Full Configuration
+<a name="full-configuration"></a>
+## ⚙️ Full Configuration
 
 Ready-to-use config files are in [`examples/`](examples/).
 
+### Resolution order
+
+```
+CLI args  >  env vars  >  webgate.toml  >  defaults
+```
+
+Config is read once at startup; restart the server to apply changes.
+
+You can configure webgate in three ways — mix and match as needed:
+
+- **`webgate.toml`** — checked at startup in `./webgate.toml` then `~/webgate.toml`
+- **Env vars** — `WEBGATE_*` prefix, always strings (MCP JSON requirement)
+- **CLI args** — `--kebab-case`, integers stay integers, ideal for multi-instance setups
+
 ### Config file (`webgate.toml`)
-
-webgate looks for `webgate.toml` at startup in this order:
-
-1. `./webgate.toml` — current working directory
-2. `~/webgate.toml` — your home directory
-3. Nothing found → all defaults apply
-
-Env vars always win over file values. Config is read once at startup; restart the server to apply changes.
 
 ```toml
 [server]
@@ -457,44 +442,86 @@ max_summary_words     = 0     # 0 = max_query_budget / 5 (e.g. 6400 with budget 
 input_budget_factor   = 3     # LLM input = max_query_budget × factor (default: 96000)
 ```
 
-### Environment variables
+### MCP client config examples
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `WEBGATE_DEFAULT_BACKEND` | `searxng` | Active backend |
-| `WEBGATE_SEARXNG_URL` | `http://localhost:8080` | SearXNG instance URL |
-| `WEBGATE_BRAVE_API_KEY` | _(empty)_ | Brave Search API key |
-| `WEBGATE_TAVILY_API_KEY` | _(empty)_ | Tavily API key |
-| `WEBGATE_EXA_API_KEY` | _(empty)_ | Exa API key |
-| `WEBGATE_SERPAPI_API_KEY` | _(empty)_ | SerpAPI key |
-| `WEBGATE_SERPAPI_ENGINE` | `google` | SerpAPI engine (`google`, `bing`, ...) |
-| `WEBGATE_SERPAPI_GL` | `us` | SerpAPI country code |
-| `WEBGATE_SERPAPI_HL` | `en` | SerpAPI language |
-| `WEBGATE_MAX_DOWNLOAD_MB` | `1` | Per-page download size cap (MB) |
-| `WEBGATE_MAX_RESULT_LENGTH` | `8000` | Per-page char cap (no-LLM multi-source queries) |
-| `WEBGATE_MAX_QUERY_BUDGET` | `32000` | Total char budget for fetch and query |
-| `WEBGATE_MAX_SEARCH_QUERIES` | `5` | Max queries per call |
-| `WEBGATE_RESULTS_PER_QUERY` | `5` | Default results fetched per query |
-| `WEBGATE_SEARCH_TIMEOUT` | `8` | HTTP request timeout in seconds |
-| `WEBGATE_OVERSAMPLING_FACTOR` | `2` | Search result multiplier for dedup reserve |
-| `WEBGATE_AUTO_RECOVERY_FETCH` | `false` | Enable gap-filler (Round 2 fetch) |
-| `WEBGATE_MAX_TOTAL_RESULTS` | `20` | Hard cap on total results per query call |
-| `WEBGATE_DEBUG` | `false` | Enable structured debug logging |
-| `WEBGATE_LOG_FILE` | _(empty)_ | Log file path (empty = stderr) |
-| `WEBGATE_LLM_ENABLED` | `false` | Enable LLM features |
-| `WEBGATE_LLM_BASE_URL` | `http://localhost:11434/v1` | OpenAI-compatible endpoint |
-| `WEBGATE_LLM_API_KEY` | _(empty)_ | API key (empty for local models) |
-| `WEBGATE_LLM_MODEL` | `llama3.2` | Model name |
-| `WEBGATE_LLM_TIMEOUT` | `15` | LLM request timeout in seconds |
-| `WEBGATE_LLM_EXPANSION_ENABLED` | `true` | Enable automatic query expansion |
-| `WEBGATE_LLM_SUMMARIZATION_ENABLED` | `true` | Enable automatic summarization |
-| `WEBGATE_LLM_RERANK_ENABLED` | `false` | Enable LLM-assisted reranking |
-| `WEBGATE_LLM_MAX_SUMMARY_WORDS` | `0` | Summary word target (0 = max_query_budget / 5) |
-| `WEBGATE_LLM_INPUT_BUDGET_FACTOR` | `3` | LLM input budget multiplier |
+**With env vars** (all values must be strings):
 
----
+```json
+{
+  "mcpServers": {
+    "webgate": {
+      "command": "uvx",
+      "args": ["mcp-webgate"],
+      "env": {
+        "WEBGATE_DEFAULT_BACKEND": "searxng",
+        "WEBGATE_SEARXNG_URL": "http://localhost:8080",
+        "WEBGATE_LLM_ENABLED": "true",
+        "WEBGATE_LLM_TIMEOUT": "60"
+      }
+    }
+  }
+}
+```
 
-## Backends
+**With CLI args** (integers stay integers — ideal for running independent instances in Zed, Cursor, etc.):
+
+```json
+{
+  "mcpServers": {
+    "webgate": {
+      "command": "uvx",
+      "args": [
+        "mcp-webgate",
+        "--searxng-url", "http://localhost:8080",
+        "--llm-enabled",
+        "--llm-model", "gemma3:27b",
+        "--llm-timeout", "60"
+      ]
+    }
+  }
+}
+```
+
+Boolean flags support `--flag` / `--no-flag` syntax (e.g. `--llm-enabled`, `--no-llm-rerank-enabled`).
+
+### Full reference
+
+| CLI argument | Env var | Default | Description |
+|---|---|---|---|
+| `--default-backend` | `WEBGATE_DEFAULT_BACKEND` | `searxng` | Active backend |
+| `--searxng-url` | `WEBGATE_SEARXNG_URL` | `http://localhost:8080` | SearXNG instance URL |
+| `--brave-api-key` | `WEBGATE_BRAVE_API_KEY` | _(empty)_ | Brave Search API key |
+| `--tavily-api-key` | `WEBGATE_TAVILY_API_KEY` | _(empty)_ | Tavily API key |
+| `--exa-api-key` | `WEBGATE_EXA_API_KEY` | _(empty)_ | Exa API key |
+| `--serpapi-api-key` | `WEBGATE_SERPAPI_API_KEY` | _(empty)_ | SerpAPI key |
+| `--serpapi-engine` | `WEBGATE_SERPAPI_ENGINE` | `google` | SerpAPI engine (`google`, `bing`, ...) |
+| `--serpapi-gl` | `WEBGATE_SERPAPI_GL` | `us` | SerpAPI country code |
+| `--serpapi-hl` | `WEBGATE_SERPAPI_HL` | `en` | SerpAPI language |
+| `--max-download-mb` | `WEBGATE_MAX_DOWNLOAD_MB` | `1` | Per-page download size cap (MB) |
+| `--max-result-length` | `WEBGATE_MAX_RESULT_LENGTH` | `8000` | Per-page char cap (no-LLM queries) |
+| `--max-query-budget` | `WEBGATE_MAX_QUERY_BUDGET` | `32000` | Total char budget for fetch and query |
+| `--max-search-queries` | `WEBGATE_MAX_SEARCH_QUERIES` | `5` | Max queries per call |
+| `--results-per-query` | `WEBGATE_RESULTS_PER_QUERY` | `5` | Default results fetched per query |
+| `--search-timeout` | `WEBGATE_SEARCH_TIMEOUT` | `8` | HTTP request timeout (seconds) |
+| `--oversampling-factor` | `WEBGATE_OVERSAMPLING_FACTOR` | `2` | Search result multiplier for dedup reserve |
+| `--auto-recovery-fetch` | `WEBGATE_AUTO_RECOVERY_FETCH` | `false` | Enable gap-filler (Round 2 fetch) |
+| `--max-total-results` | `WEBGATE_MAX_TOTAL_RESULTS` | `20` | Hard cap on total results per call |
+| `--debug` | `WEBGATE_DEBUG` | `false` | Enable structured debug logging |
+| `--log-file` | `WEBGATE_LOG_FILE` | _(empty)_ | Log file path (empty = stderr) |
+| `--trace` | `WEBGATE_TRACE` | `false` | Include content in summarized citations |
+| `--llm-enabled` | `WEBGATE_LLM_ENABLED` | `false` | Enable LLM features |
+| `--llm-base-url` | `WEBGATE_LLM_BASE_URL` | `http://localhost:11434/v1` | OpenAI-compatible endpoint |
+| `--llm-api-key` | `WEBGATE_LLM_API_KEY` | _(empty)_ | API key (empty for local models) |
+| `--llm-model` | `WEBGATE_LLM_MODEL` | `llama3.2` | Model name |
+| `--llm-timeout` | `WEBGATE_LLM_TIMEOUT` | `30` | LLM request timeout (seconds) |
+| `--llm-expansion-enabled` | `WEBGATE_LLM_EXPANSION_ENABLED` | `true` | Auto-expand queries into variants |
+| `--llm-summarization-enabled` | `WEBGATE_LLM_SUMMARIZATION_ENABLED` | `true` | LLM summary with citations |
+| `--llm-rerank-enabled` | `WEBGATE_LLM_RERANK_ENABLED` | `false` | LLM-assisted reranking |
+| `--llm-max-summary-words` | `WEBGATE_LLM_MAX_SUMMARY_WORDS` | `0` | Summary word target (0 = auto) |
+| `--llm-input-budget-factor` | `WEBGATE_LLM_INPUT_BUDGET_FACTOR` | `3` | LLM input budget multiplier |
+
+<a name="backends"></a>
+## 🔌 Backends
 
 | Backend | Auth | Notes |
 |---------|------|-------|
@@ -520,9 +547,8 @@ Exa uses neural (semantic) search by default — the primary reason to use it ov
 
 `engine` selects the underlying search engine (`google`, `bing`, `duckduckgo`, `yandex`, `yahoo`). `gl` and `hl` significantly affect result quality for non-English queries.
 
----
-
-## Debug mode
+<a name="debug-mode"></a>
+## 🐛 Debug mode
 
 When enabled, every tool call logs a structured entry:
 
@@ -534,9 +560,8 @@ export WEBGATE_DEBUG=true             # log to stderr
 export WEBGATE_LOG_FILE=/tmp/wg.log  # or log to file
 ```
 
----
-
-## Protections summary
+<a name="protections-summary"></a>
+## 🛡️ Protections summary
 
 These protections are always active — they are the core value proposition and cannot be disabled.
 
@@ -552,8 +577,38 @@ These protections are always active — they are the core value proposition and 
 | Rate limiting (429 / 502 / 503) | Exponential retry backoff, respects `Retry-After` header |
 | Unwanted domains | `blocked_domains` / `allowed_domains` filter |
 
+<a name="documentation-structure"></a>
+## 📚 Documentation Structure
+
+### Integration Guides
+- **[IDE Integration](docs/integrations/IDE.md)** — Claude Desktop, Claude Code, Zed, Cursor, Windsurf, VSCode
+- **[Agent Integration](docs/integrations/AGENT.md)** — Gemini CLI, Claude CLI, custom agents
+
+<a name="contributing"></a>
+## 🤝 Contributing
+
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines on:
+- Development setup and workflow
+- Code style and conventions
+- Testing requirements
+- Documentation standards
+- Pull request process
+
+<a name="license"></a>
+## 📄 License
+
+MIT License — see [LICENSE](LICENSE) for details.
+
+<a name="links"></a>
+## 🔗 Links
+
+- **[GitHub Repository](https://github.com/annibale-x/mcp-webgate)** — Source code and issues
+- **[MCP Protocol](https://spec.modelcontextprotocol.io/)** — Model Context Protocol specification
+- **[PyPI Package](https://pypi.org/project/mcp-webgate/)** — Python Package Index
+- **[MCP Registry](https://registry.modelcontextprotocol.io/?q=mcp-webgate&all=1)** — Model Context Protocol Registry
+
 ---
 
-## License
+**Need help?** Check the [documentation](docs/) or open an [issue](https://github.com/annibale-x/mcp-webgate/issues) on GitHub.
 
-MIT — see [LICENSE](LICENSE).
+<!-- mcp-name: io.github.annibale-x/mcp-webgate -->
