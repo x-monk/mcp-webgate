@@ -3,7 +3,7 @@
 [![Python Version](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![MCP Protocol](https://img.shields.io/badge/MCP-Protocol-blueviolet)](https://spec.modelcontextprotocol.io/)
-[![Latest Release](https://img.shields.io/badge/release-v0.1.21-purple.svg)](https://github.com/annibale-x/mcp-webgate/releases/tag/v0.1.21)
+[![Latest Release](https://img.shields.io/badge/release-v0.1.22-purple.svg)](https://github.com/annibale-x/mcp-webgate/releases/tag/v0.1.22)
 
 Web search that doesn't wreck your AI's memory.
 

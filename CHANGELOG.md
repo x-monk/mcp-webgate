@@ -1,5 +1,9 @@
 # Changelog
 
+* 2026-03-23: v0.1.22 - TODO (Hannibal)
+  * feat(): TODO
+
+
 * 2026-03-23: v0.1.21 - Build pipeline and publish fixes (Hannibal)
   * fix(robot): promote now runs build+test; build now runs test before packaging
   * fix(robot): uv pytest trampoline on Windows — switch to python -m pytest
