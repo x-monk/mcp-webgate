@@ -1,7 +1,12 @@
 # Changelog
 
-* 2026-03-23: v0.1.27 - TODO (Hannibal)
-  * feat(): TODO
+* 2026-03-23: v0.1.27 - Package metadata and beta release
+  * chore(meta): promote development status to Beta
+  * chore(meta): update description to "Web search that doesn't wreck your AI's memory."
+  * chore(meta): expand classifiers — Python 3.13/3.14, Indexing/Search, Text Processing/Filters, Libraries
+  * chore(meta): add Intended Audience :: End Users/Desktop
+  * docs(readme): add beta status section with feedback invitation
+  * docs(github): add bug_report and feedback issue templates
 
 
 * 2026-03-23: v0.1.25 - Code quality, performance, and documentation improvements
