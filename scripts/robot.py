@@ -239,6 +239,13 @@ def cmd_promote(args: argparse.Namespace) -> None:
     # Build (includes test)
     cmd_build(args)
 
+    # uv build may regenerate uv.lock — commit it if dirty before switching branches
+    lock_status = run(["git", "status", "--porcelain", "uv.lock"], capture=True)
+    if lock_status.stdout.strip():
+        info("uv.lock was updated by build — committing before promote …")
+        run(["git", "add", "uv.lock"])
+        run(["git", "commit", "-m", "chore(deps): update lockfile"])
+
     # Merge dev -> main
     info("Merging dev -> main ...")
     run(["git", "checkout", "main"])
