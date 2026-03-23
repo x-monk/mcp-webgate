@@ -14,7 +14,8 @@ from .backends.tavily import TavilyBackend
 from .config import load_config, parse_cli_args
 from .tools.fetch import tool_fetch
 from .tools.query import tool_query
-from .utils.logger import setup_debug_logging
+from . import __version__
+from .utils.logger import log_startup, setup_debug_logging
 
 _config = load_config()
 
@@ -182,6 +183,22 @@ def main():
     _config = load_config(parse_cli_args())
     if _config.server.debug or _config.server.trace:
         setup_debug_logging(_config.server.log_file)
+        log_startup(
+            version=__version__,
+            backend=_config.backends.default,
+            budget=_config.server.max_query_budget,
+            max_result_length=_config.server.max_result_length,
+            timeout=_config.server.search_timeout,
+            adaptive_budget=_config.server.adaptive_budget,
+            auto_recovery=_config.server.auto_recovery_fetch,
+            trace=_config.server.trace,
+            llm_enabled=_config.llm.enabled,
+            llm_model=_config.llm.model,
+            llm_base_url=_config.llm.base_url,
+            llm_expansion=_config.llm.expansion_enabled,
+            llm_summarization=_config.llm.summarization_enabled,
+            llm_rerank=_config.llm.llm_rerank_enabled,
+        )
     mcp.run(transport="stdio")
 
 

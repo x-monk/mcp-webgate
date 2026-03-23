@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from mcp_webgate.utils import logger as logger_module
-from mcp_webgate.utils.logger import log_fetch, log_query, setup_debug_logging
+from mcp_webgate.utils.logger import log_fetch, log_query, log_startup, setup_debug_logging
 
 
 @pytest.fixture(autouse=True)
@@ -40,9 +40,59 @@ class TestSetupDebugLogging:
 
         assert logger_module._configured is True
         assert logger_module._log_target == log_path
-        # startup message should be written
+        # setup_debug_logging no longer writes any message on its own
+        assert not (tmp_path / "test.log").exists()
+
+
+class TestLogStartup:
+    def test_log_startup_no_llm(self, tmp_path):
+        logger_module._configured = False
+        log_path = str(tmp_path / "test.log")
+        setup_debug_logging(log_file=log_path)
+        log_startup(
+            version="0.1.22",
+            backend="searxng",
+            budget=32000,
+            max_result_length=8000,
+            timeout=8,
+            adaptive_budget=False,
+            auto_recovery=False,
+            trace=False,
+            llm_enabled=False,
+        )
         content = (tmp_path / "test.log").read_text(encoding="utf-8")
-        assert "debug logging initialized" in content
+        assert "server started v0.1.22" in content
+        assert "backend=searxng" in content
+        assert "llm=off" in content
+
+    def test_log_startup_with_llm(self, tmp_path):
+        logger_module._configured = False
+        log_path = str(tmp_path / "test.log")
+        setup_debug_logging(log_file=log_path)
+        log_startup(
+            version="0.1.22",
+            backend="brave",
+            budget=32000,
+            max_result_length=8000,
+            timeout=8,
+            adaptive_budget=True,
+            auto_recovery=False,
+            trace=False,
+            llm_enabled=True,
+            llm_model="llama3.2",
+            llm_base_url="http://localhost:11434/v1",
+            llm_expansion=True,
+            llm_summarization=True,
+            llm_rerank=False,
+        )
+        content = (tmp_path / "test.log").read_text(encoding="utf-8")
+        assert "server started v0.1.22" in content
+        assert "backend=brave" in content
+        assert "adaptive_budget" in content
+        assert "llama3.2" in content
+        assert "localhost:11434" in content
+        assert "expand=on" in content
+        assert "sum=on" in content
 
 
 class TestLogFetch:

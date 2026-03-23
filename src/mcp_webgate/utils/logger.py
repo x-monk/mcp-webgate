@@ -32,7 +32,6 @@ def setup_debug_logging(log_file: str = "") -> None:
         _log_target = "stderr"
 
     _configured = True
-    _emit("debug logging initialized (target=%s)", _log_target)
 
 
 def _emit(fmt: str, *args: object) -> None:
@@ -49,6 +48,57 @@ def _emit(fmt: str, *args: object) -> None:
     else:
         with open(_log_target, "a", encoding="utf-8") as f:
             f.write(line)
+
+
+def log_startup(
+    *,
+    version: str,
+    backend: str,
+    budget: int,
+    max_result_length: int,
+    timeout: int,
+    adaptive_budget: bool,
+    auto_recovery: bool,
+    trace: bool,
+    llm_enabled: bool,
+    llm_model: str = "",
+    llm_base_url: str = "",
+    llm_expansion: bool = False,
+    llm_summarization: bool = False,
+    llm_rerank: bool = False,
+) -> None:
+    """Log server startup with active configuration summary."""
+    core = (
+        f"backend={backend} | "
+        f"budget={budget} len={max_result_length} timeout={timeout}s"
+    )
+    flags = []
+    if adaptive_budget:
+        flags.append("adaptive_budget")
+    if auto_recovery:
+        flags.append("auto_recovery")
+    if trace:
+        flags.append("trace")
+    if flags:
+        core += " | " + " ".join(flags)
+
+    if llm_enabled:
+        # Strip trailing /v1 or similar path from base_url for compactness
+        host = llm_base_url.rstrip("/")
+        if host.endswith("/v1"):
+            host = host[:-3]
+        llm_parts = [f"llm={llm_model}@{host}"]
+        if llm_expansion:
+            llm_parts.append("expand=on")
+        if llm_summarization:
+            llm_parts.append("sum=on")
+        if llm_rerank:
+            llm_parts.append("rerank=on")
+        llm_str = " ".join(llm_parts)
+    else:
+        llm_str = "llm=off"
+
+    _emit("server started v%s | %s | %s", version, core, llm_str)
 
 
 def log_fetch(
