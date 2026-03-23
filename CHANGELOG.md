@@ -1,15 +1,15 @@
 # Changelog
 
-* 2026-03-23: v0.1.22 - TODO (Hannibal)
-  * feat(): TODO
+* 2026-03-23: v0.1.22 - Update .gitignore
+  * chore(git): add uv.lock to .gitignore
 
 
-* 2026-03-23: v0.1.21 - Build pipeline and publish fixes (Hannibal)
+* 2026-03-23: v0.1.21 - Build pipeline and publish fixes
   * fix(robot): promote now runs build+test; build now runs test before packaging
   * fix(robot): uv pytest trampoline on Windows — switch to python -m pytest
   * fix(publish): use twine for .pypirc support; add twine to dev deps
   * fix(build): inject Recent Changes table into README before PyPI build, restore after
-  * fix(meta): remove 'claude' from package keywords
+  * chore(git): add .agent/, .claude/, .dev/ to .gitignore
 
 
 * 2026-03-23: v0.1.20 - Add full source to version control
