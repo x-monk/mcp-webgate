@@ -1,5 +1,9 @@
 # Changelog
 
+* 2026-03-23: v0.1.27 - TODO (Hannibal)
+  * feat(): TODO
+
+
 * 2026-03-23: v0.1.25 - Code quality, performance, and documentation improvements
   * refactor(config): replace @field_validator boilerplate with Field constraints
   * perf(cleaner): use str.translate() for typography normalization (O(n) vs 40+ sequential scans)
