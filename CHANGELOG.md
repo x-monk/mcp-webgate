@@ -1,5 +1,20 @@
 # Changelog
 
+* 2026-03-23: v0.1.25 - Code quality, performance, and documentation improvements
+  * refactor(config): replace @field_validator boilerplate with Field constraints
+  * perf(cleaner): use str.translate() for typography normalization (O(n) vs 40+ sequential scans)
+  * fix(server): defer config initialization to main() — default instance at module level
+  * fix(llm): guard against empty choices in API response; fix missing space in expander prompt; improve summarizer wording
+  * refactor(query): extract _redistribute_budget as standalone helper
+  * fix(url): dedup_urls now returns sanitized URLs instead of originals
+  * chore(deps): remove unused [llm] optional-dependencies group
+  * docs(advanced): expand BM25 description; add column-legend table for adaptive budget log
+  * docs(contributing): add logging/debug guidance; redirect env var reference to README
+  * docs(readme): add LLM features decision table; fix MCP spec URL
+  * docs(agent): add Claude CLI version compatibility note
+  * docs(ide): simplify VSCode section
+
+
 * 2026-03-23: v0.1.24 - Stronger tool instructions and documentation cleanup
   * feat(server): strengthen FastMCP instructions and onboarding to prevent native fetch fallback
   * feat(server): add MANDATORY rules, why field, output_fields, and imperative docstrings
