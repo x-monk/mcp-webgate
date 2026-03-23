@@ -79,6 +79,7 @@ tests/
 scripts/
   robot.py            project automation (test / build / install / bump / promote / publish / status / query)
 
+server.json           MCP Registry metadata (version auto-updated by robot.py bump)
 Dockerfile            multi-stage image with uv, python:3.11-slim, non-root user
 ```
 
@@ -302,25 +303,32 @@ Response objects should be `MagicMock()`, not `AsyncMock()` — only the methods
 
 ---
 
-## CI
+## CI / CD
 
-The project uses GitHub Actions to run the full test suite on Windows, Linux, and macOS on every release.
+The project uses two GitHub Actions workflows:
 
-**Trigger:** `push: tags: v*.*.*` — fires automatically when `robot.py promote` pushes the version tag to origin. The action never fires on `dev` pushes, only on actual releases.
+### CI — cross-platform tests ([`ci.yml`](.github/workflows/ci.yml))
 
-**Workflow file:** [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
+**Trigger:** `push: tags: v*.*.*` — fires automatically when `robot.py promote` pushes the version tag.
 
 **Matrix:** `ubuntu-latest`, `windows-latest`, `macos-latest`, Python 3.11.
 `fail-fast: false` — all three platforms always complete even if one fails.
-
-**What it runs:**
 
 ```bash
 uv sync --all-groups   # install all deps including dev
 uv run pytest -v       # full test suite (mock-based; no live services needed)
 ```
 
-Integration tests (`test_integration_searxng.py`, `test_integration_llm.py`) auto-skip because the required services (SearXNG, Ollama) are not available in the CI environment.
+Integration tests auto-skip because SearXNG and Ollama are not available in CI.
+
+### Publish — PyPI + MCP Registry ([`publish.yml`](.github/workflows/publish.yml))
+
+**Trigger:** `workflow_dispatch` only — dispatched by `robot.py publish` via `gh workflow run`.
+
+Runs on `ubuntu-latest` against the `main` branch:
+1. Installs deps, runs tests, builds the distribution
+2. Uploads to PyPI (requires `PYPI_TOKEN` repository secret)
+3. Publishes to the MCP Registry via `mcp-publisher` (uses the built-in `GITHUB_TOKEN`)
 
 ---
 
@@ -346,7 +354,7 @@ python scripts/robot.py bump 0.2.0     # explicit version
 ```
 
 `bump` will:
-- Update version in `pyproject.toml` and `src/mcp_webgate/__init__.py`
+- Update version in `pyproject.toml`, `src/mcp_webgate/__init__.py`, and `server.json`
 - Update the release badge URL in `README.md`
 - Scaffold a CHANGELOG entry if one is not already present
 - Commit with `chore: bump version to X.Y.Z`
@@ -355,31 +363,35 @@ python scripts/robot.py bump 0.2.0     # explicit version
 ### 3. Promote to main
 
 ```bash
-python scripts/robot.py promote
+python scripts/robot.py promote          # promote + watch CI
+python scripts/robot.py promote --batch  # promote without watching CI
 ```
 
 `promote` will:
+- Run the full test suite and build locally
 - Merge `dev` -> `main` (no-ff)
 - Create annotated tag `vX.Y.Z`
 - Push `main`, `dev`, and the tag to `origin`
 - Check out `dev` again
+- Watch the CI workflow (`ci.yml`) until it completes (unless `--batch`)
 
-### 4. Build distribution
+If CI fails, `promote` exits with an error — do not publish until CI is green.
 
-```bash
-python scripts/robot.py build
-```
-
-Produces `dist/*.whl` and `dist/*.tar.gz`.
-
-### 5. Publish
+### 4. Publish
 
 ```bash
-python scripts/robot.py publish           # -> PyPI
-python scripts/robot.py publish --test    # -> TestPyPI
+python scripts/robot.py publish
 ```
 
-Requires `UV_PUBLISH_TOKEN` (or `TWINE_PASSWORD`) set to your PyPI API token.
+`publish` dispatches the GitHub Actions `publish.yml` workflow via `gh workflow run`. The workflow:
+- Checks out `main`
+- Builds the distribution (`uv build`)
+- Uploads to **PyPI** (via twine)
+- Publishes to the **MCP Registry** (via `mcp-publisher`)
+
+Wait for CI to pass before running `publish`. Requires:
+- `PYPI_TOKEN` secret configured in the GitHub repository
+- `GITHUB_TOKEN` (built-in) for MCP Registry authentication
 
 ---
 

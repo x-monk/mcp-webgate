@@ -7,8 +7,8 @@ Commands:
   build               Build PyPI wheel + sdist into dist/
   install             Uninstall, clean, rebuild, and install as uv tool
   bump [X.Y.Z]        Bump version and commit on dev branch
-  promote             Merge dev->main, tag, push, checkout dev
-  publish [-t/--test] Publish to PyPI (or TestPyPI with -t/--test)
+  promote [-b/--batch] Merge dev->main, tag, push, watch CI (-b to skip watch)
+  publish             Dispatch GitHub Actions workflow (PyPI + MCP Registry)
   run [ARGS...]       Start mcp-webgate from local source (uv run)
   query QUERY         Run webgate_query and print JSON results
 """
@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import datetime
+import json
 import re
 import subprocess
 import sys
@@ -28,6 +29,7 @@ PYPROJECT = ROOT / "pyproject.toml"
 CHANGELOG = ROOT / "CHANGELOG.md"
 INIT = ROOT / "src" / "mcp_webgate" / "__init__.py"
 README = ROOT / "README.md"
+SERVER_JSON = ROOT / "server.json"
 
 
 # ---------------------------------------------------------------------------
@@ -103,6 +105,17 @@ def write_version(new_ver: str) -> None:
             count=1,
         )
         README.write_text(readme_text, encoding="utf-8")
+
+    # server.json — update version in root and packages
+    if SERVER_JSON.exists():
+        data = json.loads(SERVER_JSON.read_text(encoding="utf-8"))
+        data["version"] = new_ver
+        for pkg in data.get("packages", []):
+            pkg["version"] = new_ver
+        SERVER_JSON.write_text(
+            json.dumps(data, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
 
 
 def bump_patch(version: str) -> str:
@@ -208,14 +221,18 @@ def cmd_bump(args: argparse.Namespace) -> None:
         info(f"CHANGELOG already has entry for {new_ver}, skipping scaffold.")
 
     write_version(new_ver)
-    info(f"Version written to pyproject.toml and __init__.py")
+    info(f"Version written to pyproject.toml, __init__.py, and server.json")
 
     # Commit
-    run(["git", "add",
-         str(PYPROJECT.relative_to(ROOT)),
-         str(INIT.relative_to(ROOT)),
-         str(CHANGELOG.relative_to(ROOT)),
-         str(README.relative_to(ROOT))])
+    files_to_add = [
+        str(PYPROJECT.relative_to(ROOT)),
+        str(INIT.relative_to(ROOT)),
+        str(CHANGELOG.relative_to(ROOT)),
+        str(README.relative_to(ROOT)),
+    ]
+    if SERVER_JSON.exists():
+        files_to_add.append(str(SERVER_JSON.relative_to(ROOT)))
+    run(["git", "add"] + files_to_add)
     run(["git", "commit", "-m", f"chore: bump version to {new_ver}"])
     run(["git", "push", "origin", "dev"])
     info(f"Committed and pushed version bump to dev.")
@@ -263,6 +280,27 @@ def cmd_promote(args: argparse.Namespace) -> None:
     run(["git", "push", "origin", "dev"])
 
     info(f"Promote complete. {tag} is live on main.")
+
+    if not args.batch:
+        info("Waiting for CI workflow to start …")
+        import time
+        time.sleep(5)
+        # Find the run triggered by the tag push
+        result = run(
+            ["gh", "run", "list", "--workflow=ci.yml", "--limit=1", "--json=databaseId", "--jq=.[0].databaseId"],
+            capture=True,
+            check=False,
+        )
+        run_id = result.stdout.strip()
+        if run_id:
+            info(f"Watching CI run {run_id} …")
+            ci = run(["gh", "run", "watch", run_id, "--exit-status"], check=False)
+            if ci.returncode == 0:
+                info("CI passed.")
+            else:
+                die("CI failed. Fix the issue before publishing.")
+        else:
+            info("Could not find CI run. Check manually: gh run list --workflow=ci.yml")
 
 
 def get_version_on_branch(branch: str) -> str:
@@ -434,18 +472,17 @@ def cmd_query(args: argparse.Namespace) -> None:
 
 
 def cmd_publish(args: argparse.Namespace) -> None:
-    dist = ROOT / "dist"
-    if not dist.exists() or not list(dist.iterdir()):
-        die("dist/ is empty. Run 'python scripts/robot.py build' first.")
+    version = read_version()
+    tag = f"v{version}"
 
-    if args.test:
-        info("Publishing to TestPyPI …")
-        run(["uv", "run", "twine", "upload", "--repository", "testpypi", "dist/*"])
-    else:
-        info("Publishing to PyPI …")
-        run(["uv", "run", "twine", "upload", "dist/*"])
+    # Verify the tag exists (promote must have run first)
+    result = run(["git", "tag", "-l", tag], capture=True)
+    if not result.stdout.strip():
+        die(f"Tag '{tag}' not found. Run 'robot promote' first.")
 
-    info("Publish complete.")
+    info(f"Dispatching publish workflow for {tag} …")
+    run(["gh", "workflow", "run", "publish.yml", "--ref", "main"])
+    info(f"Workflow dispatched. Monitor at: gh run list --workflow=publish.yml")
 
 
 # ---------------------------------------------------------------------------
@@ -472,7 +509,12 @@ def main() -> None:
 
     sub.add_parser("status", help="Show branch, versions, recent changelog, test count")
     sub.add_parser("install", help="Uninstall, clean, rebuild, and install as uv tool")
-    sub.add_parser("promote", help="Merge dev->main, tag, push, checkout dev")
+    p_promote = sub.add_parser("promote", help="Merge dev->main, tag, push, watch CI")
+    p_promote.add_argument(
+        "-b", "--batch",
+        action="store_true",
+        help="Skip CI watch (for scripting)",
+    )
 
     p_run = sub.add_parser("run", help="Start mcp-webgate from local source (uv run)")
     p_run.add_argument(
@@ -482,12 +524,7 @@ def main() -> None:
         help="Extra args forwarded to mcp-webgate (e.g. --debug --llm-enabled)",
     )
 
-    p_pub = sub.add_parser("publish", help="Publish to PyPI")
-    p_pub.add_argument(
-        "-t", "--test",
-        action="store_true",
-        help="Publish to TestPyPI instead",
-    )
+    sub.add_parser("publish", help="Dispatch GitHub Actions publish workflow (PyPI + MCP Registry)")
 
     p_query = sub.add_parser("query", help="Run webgate_query and print JSON results")
     p_query.add_argument("query", metavar="QUERY", help="Search query string")
