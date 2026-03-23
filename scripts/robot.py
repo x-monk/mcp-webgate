@@ -392,10 +392,10 @@ def cmd_publish(args: argparse.Namespace) -> None:
 
     if args.test:
         info("Publishing to TestPyPI …")
-        run(["uv", "run", "twine", "upload", "--repository", "testpypi", "dist/*"])
+        run(["uv", "publish", "--publish-url", "https://test.pypi.org/legacy/"])
     else:
         info("Publishing to PyPI …")
-        run(["uv", "run", "twine", "upload", "dist/*"])
+        run(["uv", "publish"])
 
     info("Publish complete.")
 
