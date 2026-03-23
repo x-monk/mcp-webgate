@@ -209,3 +209,8 @@ __marimo__/
 # Project-specific
 .serena/cache/
 *.log
+
+# IDE/tool-specific local directories
+.agent/
+.claude/
+.dev/
