@@ -8,7 +8,7 @@ Commands:
   install             Uninstall, clean, rebuild, and install as uv tool
   bump [X.Y.Z]        Bump version and commit on dev branch
   promote [-b/--batch] Merge dev->main, tag, push, watch CI (-b to skip watch)
-  publish             Dispatch GitHub Actions workflow (PyPI + MCP Registry)
+  publish [-b/--batch] Dispatch GH Actions workflow (PyPI + MCP Registry), watch by default
   run [ARGS...]       Start mcp-webgate from local source (uv run)
   query QUERY         Run webgate_query and print JSON results
 """
@@ -482,7 +482,25 @@ def cmd_publish(args: argparse.Namespace) -> None:
 
     info(f"Dispatching publish workflow for {tag} …")
     run(["gh", "workflow", "run", "publish.yml", "--ref", "main"])
-    info(f"Workflow dispatched. Monitor at: gh run list --workflow=publish.yml")
+
+    if not args.batch:
+        import time
+        time.sleep(5)
+        result = run(
+            ["gh", "run", "list", "--workflow=publish.yml", "--limit=1", "--json=databaseId", "--jq=.[0].databaseId"],
+            capture=True,
+            check=False,
+        )
+        run_id = result.stdout.strip()
+        if run_id:
+            info(f"Watching publish run {run_id} …")
+            pub = run(["gh", "run", "watch", run_id, "--exit-status"], check=False)
+            if pub.returncode == 0:
+                info("Publish complete.")
+            else:
+                die("Publish workflow failed. Check: gh run view --log-failed")
+        else:
+            info("Could not find publish run. Check: gh run list --workflow=publish.yml")
 
 
 # ---------------------------------------------------------------------------
@@ -524,7 +542,12 @@ def main() -> None:
         help="Extra args forwarded to mcp-webgate (e.g. --debug --llm-enabled)",
     )
 
-    sub.add_parser("publish", help="Dispatch GitHub Actions publish workflow (PyPI + MCP Registry)")
+    p_pub = sub.add_parser("publish", help="Dispatch GitHub Actions publish workflow (PyPI + MCP Registry)")
+    p_pub.add_argument(
+        "-b", "--batch",
+        action="store_true",
+        help="Skip workflow watch (for scripting)",
+    )
 
     p_query = sub.add_parser("query", help="Run webgate_query and print JSON results")
     p_query.add_argument("query", metavar="QUERY", help="Search query string")
