@@ -3,7 +3,8 @@
 [![Python Version](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![MCP Protocol](https://img.shields.io/badge/MCP-Protocol-blueviolet)](https://spec.modelcontextprotocol.io/)
-[![Latest Release](https://img.shields.io/badge/release-v0.1.24-purple.svg)](https://github.com/annibale-x/mcp-webgate/releases/tag/v0.1.24)
+[![Latest Release](https://img.shields.io/badge/release-v0.1.27-purple.svg)](https://github.com/annibale-x/mcp-webgate/releases/tag/v0.1.27)
+[![Beta](https://img.shields.io/badge/status-beta-orange.svg)](https://github.com/annibale-x/mcp-webgate/issues)
 
 Web search that doesn't wreck your AI's memory.
 
@@ -591,6 +592,18 @@ These protections are always active — they are the core value proposition and 
 
 <!-- RECENT_CHANGES_START -->
 <!-- RECENT_CHANGES_END -->
+
+## 🧪 Beta Status
+
+mcp-webgate is in **beta**. Core functionality is stable and the server is used in production,
+but the configuration API may still change before 1.0.
+
+**Feedback is very welcome.** If something doesn't work as expected, behaves oddly,
+or you have a use case that isn't covered:
+
+→ [Open an issue on GitHub](https://github.com/annibale-x/mcp-webgate/issues)
+
+Bug reports, configuration questions, and feature requests all help shape the roadmap.
 
 ## 🤝 Contributing
 
