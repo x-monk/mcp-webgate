@@ -46,4 +46,4 @@ jobs:
           mcp-publisher login github
           mcp-publisher publish
         env:
-          MCP_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MCP_GITHUB_TOKEN: ${{ secrets.MCP_REGISTRY_TOKEN }}
