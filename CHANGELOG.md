@@ -1,5 +1,14 @@
 # Changelog
 
+* 2026-03-23: v0.1.19 - Documentation overhaul and build improvements
+  * docs(plan): complete rewrite of PLAN.md — fix all stale defaults, wrong signatures, outdated roadmap; add emoji TOC, query pipeline section, LLM integration section
+  * docs(readme): add adaptive_budget to config table and webgate.toml example; fix --trace description; add ADVANCED.md to documentation structure; clarify Exa use_autoprompt wording
+  * docs(contributing): fix changelog format example; add adaptive_budget to protections table; add ADVANCED.md cross-reference
+  * docs(ide): fix Zed Editor keyboard shortcut
+  * feat(build): inject 📋 Recent Changes section into README before PyPI build (temporary patch, restored after build)
+
+---
+
 * 2026-03-23: v0.1.18 - Adaptive budget allocation (EXPERIMENTAL)
   * feat(reranker): add rerank_with_scores() — returns BM25 scores alongside ranked sources
   * feat(query): EXPERIMENTAL adaptive_budget — proportional char allocation based on BM25 scores; top-ranked sources receive up to fetch_factor× more chars

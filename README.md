@@ -3,7 +3,7 @@
 [![Python Version](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![MCP Protocol](https://img.shields.io/badge/MCP-Protocol-blueviolet)](https://spec.modelcontextprotocol.io/)
-[![Latest Release](https://img.shields.io/badge/release-v0.1.18-purple.svg)](https://github.com/annibale-x/mcp-webgate/releases/tag/v0.1.18)
+[![Latest Release](https://img.shields.io/badge/release-v0.1.19-purple.svg)](https://github.com/annibale-x/mcp-webgate/releases/tag/v0.1.19)
 
 Web search that doesn't wreck your AI's memory.
 
@@ -415,6 +415,8 @@ auto_recovery_fetch = false   # retry failed fetches from reserve pool
 max_total_results  = 20       # hard cap: never fetch more than this many pages total
 blocked_domains    = ["reddit.com", "pinterest.com"]
 allowed_domains    = []       # if non-empty, only these domains are allowed
+adaptive_budget    = false   # [EXPERIMENTAL] proportional char allocation based on BM25 rank
+adaptive_budget_fetch_factor = 3  # generous pre-rank fetch multiplier
 
 [backends]
 default = "searxng"
@@ -508,7 +510,9 @@ Boolean flags support `--flag` / `--no-flag` syntax (e.g. `--llm-enabled`, `--no
 | `--max-total-results` | `WEBGATE_MAX_TOTAL_RESULTS` | `20` | Hard cap on total results per call |
 | `--debug` | `WEBGATE_DEBUG` | `false` | Enable structured debug logging |
 | `--log-file` | `WEBGATE_LOG_FILE` | _(empty)_ | Log file path (empty = stderr) |
-| `--trace` | `WEBGATE_TRACE` | `false` | Include content in summarized citations |
+| `--trace` | `WEBGATE_TRACE` | `false` | Include content in summarized citations; also activates debug logging |
+| `--adaptive-budget` | `WEBGATE_ADAPTIVE_BUDGET` | `false` | [EXPERIMENTAL] Proportional char allocation based on BM25 rank |
+| `--adaptive-budget-fetch-factor` | `WEBGATE_ADAPTIVE_BUDGET_FETCH_FACTOR` | `3` | [EXPERIMENTAL] Generous pre-rank fetch multiplier |
 | `--llm-enabled` | `WEBGATE_LLM_ENABLED` | `false` | Enable LLM features |
 | `--llm-base-url` | `WEBGATE_LLM_BASE_URL` | `http://localhost:11434/v1` | OpenAI-compatible endpoint |
 | `--llm-api-key` | `WEBGATE_LLM_API_KEY` | _(empty)_ | API key (empty for local models) |
@@ -541,7 +545,7 @@ Then set `WEBGATE_SEARXNG_URL=http://localhost:8080`.
 
 ### Exa notes
 
-Exa uses neural (semantic) search by default — the primary reason to use it over keyword backends. `use_autoprompt` is always disabled internally because mcp-webgate handles query expansion.
+Exa uses neural (semantic) search by default — the primary reason to use it over keyword backends. `use_autoprompt` is hardcoded to `false` (not user-configurable) because mcp-webgate handles query expansion via its own LLM expander.
 
 ### SerpAPI notes
 
@@ -583,6 +587,7 @@ These protections are always active — they are the core value proposition and 
 ### Integration Guides
 - **[IDE Integration](docs/integrations/IDE.md)** — Claude Desktop, Claude Code, Zed, Cursor, Windsurf, VSCode
 - **[Agent Integration](docs/integrations/AGENT.md)** — Gemini CLI, Claude CLI, custom agents
+- **[Advanced Features](ADVANCED.md)** — BM25/LLM reranking internals, adaptive budget allocation
 
 <a name="contributing"></a>
 ## 🤝 Contributing
