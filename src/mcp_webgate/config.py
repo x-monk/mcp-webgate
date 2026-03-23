@@ -7,19 +7,19 @@ import os
 import tomllib
 from pathlib import Path
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field
 
 
 class ServerConfig(BaseModel):
-    max_download_mb: int = 1
-    max_result_length: int = 8000
+    max_download_mb: int = Field(default=1, gt=0)
+    max_result_length: int = Field(default=8000, gt=0)
     search_timeout: int = 8
-    oversampling_factor: int = 2
+    oversampling_factor: int = Field(default=2, ge=1)
     auto_recovery_fetch: bool = False
-    max_total_results: int = 20
-    max_query_budget: int = 32000
-    max_search_queries: int = 5
-    results_per_query: int = 5
+    max_total_results: int = Field(default=20, ge=1)
+    max_query_budget: int = Field(default=32000, ge=1)
+    max_search_queries: int = Field(default=5, ge=1)
+    results_per_query: int = Field(default=5, ge=1)
     blocked_domains: list[str] = []
     allowed_domains: list[str] = []
     debug: bool = False
@@ -27,56 +27,7 @@ class ServerConfig(BaseModel):
     trace: bool = False  # include full sources in summarized response; also enables reranking stats logging
     # EXPERIMENTAL: proportional char allocation based on BM25 rank score
     adaptive_budget: bool = False
-    adaptive_budget_fetch_factor: int = 3  # generous pre-rank fetch multiplier
-
-    @field_validator("max_download_mb")
-    @classmethod
-    def _validate_download_mb(cls, v: int) -> int:
-        if v <= 0:
-            raise ValueError("max_download_mb must be > 0")
-        return v
-
-    @field_validator("max_result_length")
-    @classmethod
-    def _validate_result_length(cls, v: int) -> int:
-        if v <= 0:
-            raise ValueError("max_result_length must be > 0")
-        return v
-
-    @field_validator("oversampling_factor")
-    @classmethod
-    def _validate_oversampling(cls, v: int) -> int:
-        if v < 1:
-            raise ValueError("oversampling_factor must be >= 1")
-        return v
-
-    @field_validator("max_total_results")
-    @classmethod
-    def _validate_max_results(cls, v: int) -> int:
-        if v < 1:
-            raise ValueError("max_total_results must be >= 1")
-        return v
-
-    @field_validator("max_query_budget")
-    @classmethod
-    def _validate_query_budget(cls, v: int) -> int:
-        if v < 1:
-            raise ValueError("max_query_budget must be >= 1")
-        return v
-
-    @field_validator("max_search_queries")
-    @classmethod
-    def _validate_max_search_queries(cls, v: int) -> int:
-        if v < 1:
-            raise ValueError("max_search_queries must be >= 1")
-        return v
-
-    @field_validator("results_per_query")
-    @classmethod
-    def _validate_results_per_query(cls, v: int) -> int:
-        if v < 1:
-            raise ValueError("results_per_query must be >= 1")
-        return v
+    adaptive_budget_fetch_factor: int = Field(default=3, ge=1)  # generous pre-rank fetch multiplier
 
     @property
     def max_download_bytes(self) -> int:
@@ -235,7 +186,12 @@ def _apply_env(cfg: Config) -> None:
     for key, setter in env_map.items():
         val = os.environ.get(key)
         if val is not None:
-            setter(val)
+            try:
+                setter(val)
+            except (ValueError, TypeError) as exc:
+                raise ValueError(
+                    f"Invalid value for env var {key}={val!r}: {exc}"
+                ) from exc
 
 
 def parse_cli_args() -> argparse.Namespace:

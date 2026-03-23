@@ -14,6 +14,43 @@ from ..utils.reranker import rerank_deterministic, rerank_llm, rerank_with_score
 from ..utils.url import dedup_urls, is_binary_url, is_domain_allowed, sanitize_url
 
 
+def _redistribute_budget(
+    sources: list[dict],
+    allocs: list[int],
+    bm25_scores: list[float],
+) -> list[int]:
+    """Reclaim unused budget from short/failed sources and give it to hungry ones.
+
+    Iterates up to 5 rounds (converges in 1-2). Returns updated allocations.
+    A "hungry" source is one whose actual content exceeds its current allocation.
+    A "donor" source is one whose actual content is shorter than its allocation
+    (failed fetch, thin page, paywalled content).
+    """
+    allocs = list(allocs)  # work on a copy
+    for _round in range(5):  # converges fast, cap to avoid edge-case loops
+        surplus = 0
+        hungry_indices: list[int] = []
+        for i, (src, alloc) in enumerate(zip(sources, allocs)):
+            actual = len(src["content"])
+            if actual < alloc:
+                surplus += alloc - actual
+                allocs[i] = actual  # shrink alloc to actual
+            elif actual > alloc:
+                hungry_indices.append(i)
+        if surplus == 0 or not hungry_indices:
+            break
+        # Distribute surplus proportionally to BM25 scores of hungry sources
+        hungry_score = sum(bm25_scores[i] for i in hungry_indices)
+        if hungry_score <= 0:
+            share = surplus // len(hungry_indices)
+            for i in hungry_indices:
+                allocs[i] += share
+        else:
+            for i in hungry_indices:
+                allocs[i] += int(bm25_scores[i] / hungry_score * surplus)
+    return allocs
+
+
 async def tool_query(
     queries: str | list[str],
     backend: SearchBackend,
@@ -218,31 +255,7 @@ async def tool_query(
             allocs = [total_budget // max(1, len(sources))] * len(sources)
         initial_allocs = list(allocs)  # snapshot before redistribution
 
-        # Surplus redistribution: reclaim budget from sources whose actual
-        # content is shorter than their allocation and give it to sources
-        # that are still capped.  Iterate until no surplus remains or no
-        # hungry source can absorb more.
-        for _round in range(5):  # converges fast, cap to avoid edge-case loops
-            surplus = 0
-            hungry_indices: list[int] = []
-            for i, (src, alloc) in enumerate(zip(sources, allocs)):
-                actual = len(src["content"])
-                if actual < alloc:
-                    surplus += alloc - actual
-                    allocs[i] = actual  # shrink alloc to actual
-                elif actual > alloc:
-                    hungry_indices.append(i)
-            if surplus == 0 or not hungry_indices:
-                break
-            # Distribute surplus proportionally to BM25 scores of hungry sources
-            hungry_score = sum(bm25_scores[i] for i in hungry_indices)
-            if hungry_score <= 0:
-                share = surplus // len(hungry_indices)
-                for i in hungry_indices:
-                    allocs[i] += share
-            else:
-                for i in hungry_indices:
-                    allocs[i] += int(bm25_scores[i] / hungry_score * surplus)
+        allocs = _redistribute_budget(sources, allocs, bm25_scores)
 
         # Now truncate content to final allocations
         for source, alloc in zip(sources, allocs):

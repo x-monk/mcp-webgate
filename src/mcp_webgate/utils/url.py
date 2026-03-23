@@ -89,8 +89,9 @@ def dedup_urls(urls: list[str]) -> list[str]:
     seen: set[str] = set()
     result: list[str] = []
     for url in urls:
-        clean = sanitize_url(url).lower().rstrip("/")
+        sanitized = sanitize_url(url)
+        clean = sanitized.lower().rstrip("/")
         if clean not in seen:
             seen.add(clean)
-            result.append(url)
+            result.append(sanitized)
     return result

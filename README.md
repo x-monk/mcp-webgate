@@ -283,6 +283,19 @@ The secondary LLM sees much more content per page. Your primary AI sees only the
 
 Optional, opt-in. When `llm.enabled = false` (the default), webgate is fully deterministic. Enable the `[llm]` block to unlock three extra capabilities.
 
+### 🤔 When to enable LLM features
+
+| Situation | Recommended setup | Typical latency overhead |
+|-----------|------------------|--------------------------|
+| Fast answers, general research | LLM **disabled** (default) — BM25-ranked clean sources, zero latency overhead | none |
+| Deep research on a complex topic | **Summarization on** — get a cited Markdown report instead of raw pages | +5–30s |
+| Broad topic, one query isn't enough | **Expansion + Summarization** — LLM generates variants and synthesizes all results | +6–35s |
+| Result order matters more than speed | **LLM reranking on** — semantic ordering at the cost of one extra LLM call per query | +1–5s |
+
+**Privacy:** with LLM disabled, no data leaves your machine except web requests. With LLM enabled, cleaned search results (not raw HTML) are sent to the configured `base_url`. Point it at a local Ollama instance to keep everything on-device.
+
+**Latency trade-off:** each enabled feature adds one LLM round-trip per query. Expansion adds ~1–5s; summarization adds ~5–30s depending on model and content volume. For interactive use, summarization with a fast local model (e.g. Gemma 3 4B) is a good starting point.
+
 ### Setup
 
 ```toml
@@ -595,9 +608,9 @@ MIT License — see [LICENSE](LICENSE) for details.
 ## 🔗 Links
 
 - **[GitHub Repository](https://github.com/annibale-x/mcp-webgate)** — Source code and issues
-- **[MCP Protocol](https://spec.modelcontextprotocol.io/)** — Model Context Protocol specification
 - **[PyPI Package](https://pypi.org/project/mcp-webgate/)** — Python Package Index
 - **[MCP Registry](https://registry.modelcontextprotocol.io/?q=mcp-webgate&all=1)** — Model Context Protocol Registry
+- **[MCP Protocol](https://modelcontextprotocol.io/specification/2025-11-25)** — Model Context Protocol specification
 
 ---
 

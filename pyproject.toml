@@ -24,9 +24,6 @@ dependencies = [
     "pydantic>=2.0",
 ]
 
-[project.optional-dependencies]
-llm = ["anthropic>=0.40"]
-
 [project.urls]
 Homepage = "https://github.com/annibale-x/mcp-webgate"
 Repository = "https://github.com/annibale-x/mcp-webgate"

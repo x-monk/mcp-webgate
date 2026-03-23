@@ -11,13 +11,14 @@ from .backends.exa import ExaBackend
 from .backends.searxng import SearxngBackend
 from .backends.serpapi import SerpapiBackend
 from .backends.tavily import TavilyBackend
-from .config import load_config, parse_cli_args
+from .config import Config, load_config, parse_cli_args
 from .tools.fetch import tool_fetch
 from .tools.query import tool_query
 from . import __version__
 from .utils.logger import log_startup, setup_debug_logging
 
-_config = load_config()
+# Initialized with defaults; overwritten in main() with CLI args + env + toml.
+_config: Config = Config()
 
 mcp = FastMCP(
     "webgate",

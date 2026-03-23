@@ -39,60 +39,58 @@ _DATE_ONLY = re.compile(
     r"^\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|\w{3} \d{1,2},? \d{4}"
 )
 
-# Typography normalization table — smart quotes, dashes, ellipsis, ligatures
-_TYPOGRAPHY_MAP: list[tuple[str, str]] = [
+# Typography normalization table — smart quotes, dashes, ellipsis, ligatures.
+# Built as a str.translate() table for a single O(n) pass instead of 40+ sequential scans.
+_TYPOGRAPHY_TRANS: dict[int, str | None] = {
     # Smart / curly quotes → ASCII
-    ("\u2018", "'"),   # '  left single quotation mark
-    ("\u2019", "'"),   # '  right single quotation mark (apostrophe)
-    ("\u201a", "'"),   # ‚  single low-9 quotation mark
-    ("\u201b", "'"),   # ‛  single high-reversed-9 quotation mark
-    ("\u201c", '"'),   # "  left double quotation mark
-    ("\u201d", '"'),   # "  right double quotation mark
-    ("\u201e", '"'),   # „  double low-9 quotation mark
-    ("\u201f", '"'),   # ‟  double high-reversed-9 quotation mark
-    ("\u2039", "'"),   # ‹  single left-pointing angle quotation mark
-    ("\u203a", "'"),   # ›  single right-pointing angle quotation mark
-    ("\u00ab", '"'),   # «  left-pointing double angle quotation mark
-    ("\u00bb", '"'),   # »  right-pointing double angle quotation mark
+    ord("\u2018"): "'",   # '  left single quotation mark
+    ord("\u2019"): "'",   # '  right single quotation mark (apostrophe)
+    ord("\u201a"): "'",   # ‚  single low-9 quotation mark
+    ord("\u201b"): "'",   # ‛  single high-reversed-9 quotation mark
+    ord("\u201c"): '"',   # "  left double quotation mark
+    ord("\u201d"): '"',   # "  right double quotation mark
+    ord("\u201e"): '"',   # „  double low-9 quotation mark
+    ord("\u201f"): '"',   # ‟  double high-reversed-9 quotation mark
+    ord("\u2039"): "'",   # ‹  single left-pointing angle quotation mark
+    ord("\u203a"): "'",   # ›  single right-pointing angle quotation mark
+    ord("\u00ab"): '"',   # «  left-pointing double angle quotation mark
+    ord("\u00bb"): '"',   # »  right-pointing double angle quotation mark
     # Dashes → ASCII hyphen (with spaces to avoid word-gluing)
-    ("\u2014", " - "), # —  em dash
-    ("\u2013", " - "), # –  en dash
-    ("\u2012", " - "), # ‒  figure dash
-    ("\u2015", " - "), # ―  horizontal bar
-    ("\u2011", "-"),   # ‑  non-breaking hyphen
-    ("\u00ad", ""),    # soft hyphen (invisible, drop it)
+    ord("\u2014"): " - ", # —  em dash
+    ord("\u2013"): " - ", # –  en dash
+    ord("\u2012"): " - ", # ‒  figure dash
+    ord("\u2015"): " - ", # ―  horizontal bar
+    ord("\u2011"): "-",   # ‑  non-breaking hyphen
+    ord("\u00ad"): "",    # soft hyphen (invisible, drop it)
     # Ellipsis
-    ("\u2026", "..."), # …  horizontal ellipsis
+    ord("\u2026"): "...", # …  horizontal ellipsis
     # Typographic spaces → regular space
-    ("\u2002", " "),   # en space
-    ("\u2003", " "),   # em space
-    ("\u2004", " "),   # three-per-em space
-    ("\u2005", " "),   # four-per-em space
-    ("\u2007", " "),   # figure space
-    ("\u2009", " "),   # thin space
-    ("\u200a", " "),   # hair space
-    ("\u202f", " "),   # narrow no-break space
+    ord("\u2002"): " ",   # en space
+    ord("\u2003"): " ",   # em space
+    ord("\u2004"): " ",   # three-per-em space
+    ord("\u2005"): " ",   # four-per-em space
+    ord("\u2007"): " ",   # figure space
+    ord("\u2009"): " ",   # thin space
+    ord("\u200a"): " ",   # hair space
+    ord("\u202f"): " ",   # narrow no-break space
     # Ligatures → component letters
-    ("\ufb00", "ff"),  # ﬀ
-    ("\ufb01", "fi"),  # ﬁ
-    ("\ufb02", "fl"),  # ﬂ
-    ("\ufb03", "ffi"), # ﬃ
-    ("\ufb04", "ffl"), # ﬄ
-    ("\ufb05", "st"),  # ﬅ
-    ("\ufb06", "st"),  # ﬆ
-    ("\u0132", "IJ"),  # Ĳ  Dutch digraph
-    ("\u0133", "ij"),  # ĳ
-    ("\u0152", "OE"),  # Œ
-    ("\u0153", "oe"),  # œ
-]
+    ord("\ufb00"): "ff",  # ﬀ
+    ord("\ufb01"): "fi",  # ﬁ
+    ord("\ufb02"): "fl",  # ﬂ
+    ord("\ufb03"): "ffi", # ﬃ
+    ord("\ufb04"): "ffl", # ﬄ
+    ord("\ufb05"): "st",  # ﬅ
+    ord("\ufb06"): "st",  # ﬆ
+    ord("\u0132"): "IJ",  # Ĳ  Dutch digraph
+    ord("\u0133"): "ij",  # ĳ
+    ord("\u0152"): "OE",  # Œ
+    ord("\u0153"): "oe",  # œ
+}
 
 
 def normalize_typography(text: str) -> str:
     """Replace typographic characters with their plain ASCII equivalents."""
-    for src, dst in _TYPOGRAPHY_MAP:
-        if src in text:
-            text = text.replace(src, dst)
-    return text
+    return text.translate(_TYPOGRAPHY_TRANS)
 
 
 def clean_html(raw_html: str) -> str:

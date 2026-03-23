@@ -154,6 +154,8 @@ Uninstalls any existing `mcp-webgate` uv tool, clears cached environments, rebui
 
 `webgate.toml` is looked up at startup: `./webgate.toml` (CWD) -> `~/webgate.toml` (home) -> defaults. Config is read once; changes require a server restart.
 
+**Logs:** by default, debug output goes to **stderr**. To redirect to a file, set `WEBGATE_LOG_FILE=/path/to/wg.log` (or use `--log-file`). Enable logging with `WEBGATE_DEBUG=true` (or `--debug`). For deep pipeline inspection, add `WEBGATE_TRACE=true` — this emits per-source timing, raw/clean KB, and adaptive budget breakdown when active.
+
 Ready-to-use config files are in [`examples/`](examples/).
 
 Place `webgate.toml` in the project root or your home directory:
@@ -197,41 +199,7 @@ max_summary_words     = 0     # 0 = derived from max_query_budget / 5
 input_budget_factor   = 3     # LLM input total = max_query_budget × factor (default 96k)
 ```
 
-Full env var reference:
-
-| Env var | Default | Description |
-|---------|---------|-------------|
-| `WEBGATE_DEFAULT_BACKEND` | `searxng` | Active backend |
-| `WEBGATE_SEARXNG_URL` | `http://localhost:8080` | SearXNG URL |
-| `WEBGATE_BRAVE_API_KEY` | _(empty)_ | Brave Search API key |
-| `WEBGATE_TAVILY_API_KEY` | _(empty)_ | Tavily API key |
-| `WEBGATE_EXA_API_KEY` | _(empty)_ | Exa API key |
-| `WEBGATE_SERPAPI_API_KEY` | _(empty)_ | SerpAPI key |
-| `WEBGATE_SERPAPI_ENGINE` | `google` | SerpAPI engine |
-| `WEBGATE_SERPAPI_GL` | `us` | SerpAPI country code |
-| `WEBGATE_SERPAPI_HL` | `en` | SerpAPI language |
-| `WEBGATE_MAX_DOWNLOAD_MB` | `1` | Per-page download size cap (MB) |
-| `WEBGATE_MAX_RESULT_LENGTH` | `8000` | Per-page character cap after cleaning |
-| `WEBGATE_MAX_QUERY_BUDGET` | `32000` | Total char budget across all sources in a query |
-| `WEBGATE_MAX_SEARCH_QUERIES` | `5` | Max queries per call (expansion + manual) |
-| `WEBGATE_RESULTS_PER_QUERY` | `5` | Default results fetched per query |
-| `WEBGATE_SEARCH_TIMEOUT` | `8` | Request timeout in seconds |
-| `WEBGATE_OVERSAMPLING_FACTOR` | `2` | Search result multiplier |
-| `WEBGATE_AUTO_RECOVERY_FETCH` | `false` | Enable gap-filler |
-| `WEBGATE_MAX_TOTAL_RESULTS` | `20` | Hard cap on total results per query call |
-| `WEBGATE_DEBUG` | `false` | Enable structured debug logging |
-| `WEBGATE_LOG_FILE` | _(empty)_ | Log file path (empty = stderr) |
-| `WEBGATE_TRACE` | `false` | Include full content in summarized responses (debug) |
-| `WEBGATE_LLM_ENABLED` | `false` | Enable LLM features |
-| `WEBGATE_LLM_BASE_URL` | `http://localhost:11434/v1` | OpenAI-compatible endpoint |
-| `WEBGATE_LLM_API_KEY` | _(empty)_ | LLM API key (empty for local) |
-| `WEBGATE_LLM_MODEL` | `llama3.2` | Model name |
-| `WEBGATE_LLM_TIMEOUT` | `15` | LLM request timeout in seconds (60+ for local 27B+ models) |
-| `WEBGATE_LLM_EXPANSION_ENABLED` | `true` | Enable automatic query expansion |
-| `WEBGATE_LLM_SUMMARIZATION_ENABLED` | `true` | Enable automatic summarization |
-| `WEBGATE_LLM_RERANK_ENABLED` | `false` | Enable LLM-assisted reranking |
-| `WEBGATE_LLM_MAX_SUMMARY_WORDS` | `0` | Summary word target (0 = max_query_budget / 5) |
-| `WEBGATE_LLM_INPUT_BUDGET_FACTOR` | `3` | LLM input budget multiplier (total = max_query_budget × factor) |
+For the complete parameter reference with all env vars, CLI args, and defaults, see [Full Configuration](README.md#full-configuration).
 
 ---
 

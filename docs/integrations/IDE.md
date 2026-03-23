@@ -250,14 +250,14 @@ Windsurf uses a single global configuration file:
 
 ## 🔷 VSCode
 
-Visual Studio Code via GitHub Copilot Chat (VS Code 1.99+) or a standalone MCP extension.
+Visual Studio Code via GitHub Copilot Chat (VS Code 1.99+).
 
 ### Prerequisites
 
-- **VS Code 1.99+** (1.100+ recommended for the stable GA build)
-- GitHub Copilot Chat with a tool-call capable model, **or** the [MCP for VS Code](https://marketplace.visualstudio.com/search?term=MCP&target=VSCode) extension
+- **VS Code 1.99+** (1.100+ recommended)
+- GitHub Copilot Chat with a tool-call capable model
 
-### Configuration
+### Configuration (recommended — workspace file)
 
 Create `.vscode/mcp.json` in your workspace root:
 
@@ -274,7 +274,9 @@ Create `.vscode/mcp.json` in your workspace root:
 
 > **Note**: VS Code uses the key `"servers"` (not `"mcpServers"`).
 
-For user-level configuration (all workspaces), open the Command Palette (`Cmd/Ctrl+Shift+P`) and run **`MCP: Open User Configuration`**.
+This is the recommended approach — the file lives in your project, works immediately on open, and is easy to share with teammates (add to `.gitignore` if it contains API keys).
+
+**Alternative — user-level config (all workspaces):** open the Command Palette (`Cmd/Ctrl+Shift+P`) and run **`MCP: Open User Configuration`**, then add the same `"servers"` block.
 
 ### Starting the server
 
@@ -284,21 +286,23 @@ For user-level configuration (all workspaces), open the Command Palette (`Cmd/Ct
 
 ### Usage with GitHub Copilot
 
-MCP tools work in **Agent mode**:
+MCP tools work in **Agent mode** only:
 
 1. Open Copilot Chat (`Cmd/Ctrl+Shift+I`)
-2. Switch to **Agent** mode or use the `@workspace` prefix
+2. Switch to **Agent** mode (selector at the bottom of the chat panel)
 3. Use webgate:
 
 ```
-@workspace Search the web for the latest TypeScript 5.x release notes
+Search the web for the latest TypeScript 5.x release notes
 ```
 
 ### 🔍 Troubleshooting
 
 **MCP servers not available**: Check VS Code version is 1.99+. Run **MCP: List Servers** from the Command Palette to inspect status.
 
-**Tools not appearing**: Must use Agent mode or `@workspace` prefix. Run **MCP: Restart Server** if needed.
+**Tools not appearing**: Must be in **Agent mode**. Run **MCP: Restart Server** from the Command Palette if the server was already running before you added the config.
+
+**Finding logs**: run `uvx mcp-webgate --debug` in a terminal to see startup output. For runtime logs, add `--log-file /tmp/wg.log` to your args and inspect that file. For deep pipeline inspection (per-source timing, raw/clean KB), use `--trace` instead of `--debug`.
 
 ---
 
