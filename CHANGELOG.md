@@ -1,7 +1,12 @@
 # Changelog
 
-* 2026-03-23: v0.1.28 - TODO (Hannibal)
-  * feat(): TODO
+* 2026-03-23: v0.1.28 - CI/CD publish pipeline (Hannibal)
+  * feat(ci): add publish.yml workflow (workflow_dispatch: PyPI + MCP Registry)
+  * feat(robot): integrate CI watch in promote (--batch to skip)
+  * feat(robot): publish dispatches GH Actions instead of local twine
+  * feat(robot): bump updates server.json version alongside pyproject.toml
+  * chore(robot): remove TestPyPI support (--test flag)
+  * docs(contributing): update release workflow and CI/CD sections
 
 
 * 2026-03-23: v0.1.27 - Package metadata and beta release
