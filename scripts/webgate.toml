@@ -1,0 +1,59 @@
+# webgate.toml — full configuration reference
+#
+# Lookup order at startup: ./webgate.toml > ~/webgate.toml > defaults
+# Env vars always override file values (WEBGATE_* prefix).
+# Config is read once at startup; changes require a server restart.
+
+[server]
+max_download_mb     = 1      # hard cap on per-page raw download in MB (streaming — never buffered)
+max_result_length   = 8000   # hard char cap per page in multi-source queries (no LLM)
+max_query_budget    = 32000  # total char budget for a fetch, or input pool for a query
+max_search_queries  = 5      # max queries per call (cap on LLM expansion + manual multi-query)
+results_per_query   = 5      # results fetched per query; total = results_per_query × num_queries
+search_timeout      = 8      # HTTP timeout in seconds
+oversampling_factor = 2      # candidate multiplier before dedup (2 = 2× results fetched from backend)
+auto_recovery_fetch = false  # Round 2: replace failed fetches from oversampling reserve
+max_total_results   = 20     # hard cap on total results regardless of query count
+blocked_domains     = []     # e.g. ["reddit.com", "pinterest.com"]
+allowed_domains     = []     # if non-empty, only these domains are fetched
+debug               = false  # emit structured log on every tool call
+log_file            = ""     # log file path; empty = stderr when debug = true
+
+[backends]
+default = "searxng"          # active backend: searxng | brave | tavily | exa | serpapi
+
+[backends.searxng]
+url = "http://localhost:4000"
+
+[backends.brave]
+api_key   = ""               # Brave Search API key (https://brave.com/search/api/)
+safesearch = 1               # 0=off 1=moderate 2=strict
+
+[backends.tavily]
+api_key      = ""            # Tavily API key (https://tavily.com/)
+search_depth = "basic"       # "basic" or "advanced"
+
+[backends.exa]
+api_key       = ""           # Exa API key (https://exa.ai/)
+num_sentences = 3            # sentences per snippet
+type          = "neural"     # "neural" (semantic) or "keyword"
+
+[backends.serpapi]
+api_key = ""                 # SerpAPI key (https://serpapi.com/)
+engine  = "google"           # google | bing | duckduckgo | yandex | yahoo
+gl      = "us"               # country code for results (affects ranking)
+hl      = "en"               # language code for results
+
+[llm]
+enabled  = true             # set to true to enable expansion, summarization, reranking
+base_url = "http://localhost:11434/v1"   # any OpenAI-compatible endpoint
+api_key  = ""                # empty for local models (Ollama, LM Studio, vLLM)
+model    = "gemma3:27b"      # model name as accepted by the endpoint
+timeout  = 30
+
+# Per-feature flags — all default true when llm.enabled = true
+expansion_enabled      = true   # auto-expand single queries into N complementary variants
+summarization_enabled  = true   # append a Markdown summary with citations to every query response
+llm_rerank_enabled  = false  # LLM-assisted reranking (adds latency; BM25 always runs)
+max_summary_words   = 0      # 0 = derived from max_query_budget / 5; set explicitly to override
+input_budget_factor = 3     # LLM input total = max_query_budget × factor (LLM compresses — more input = richer output)
