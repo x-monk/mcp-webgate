@@ -162,11 +162,12 @@ def get_current_branch() -> str:
 
 def cmd_test(args: argparse.Namespace) -> None:
     info("Running test suite …")
-    run(["uv", "run", "pytest", "-v"])
+    run(["uv", "run", "python", "-m", "pytest", "-v"])
     info("All tests passed.")
 
 
 def cmd_build(args: argparse.Namespace) -> None:
+    cmd_test(args)
     info("Building distribution packages …")
     import shutil
     dist = ROOT / "dist"
@@ -229,6 +230,9 @@ def cmd_promote(args: argparse.Namespace) -> None:
     result = run(["git", "tag", "-l", tag], capture=True)
     if result.stdout.strip():
         die(f"Tag '{tag}' already exists. Did you forget to bump?")
+
+    # Build (includes test)
+    cmd_build(args)
 
     # Merge dev -> main
     info("Merging dev -> main ...")
