@@ -1,5 +1,12 @@
 # Changelog
 
+* 2026-03-23: v0.1.23 - CI, dev tooling, and logging improvements (Hannibal)
+  * feat(ci): add GitHub Actions cross-platform test workflow (Ubuntu, Windows, macOS)
+  * feat(robot): add `run` command to start server from local source via uv run
+  * feat(logger): replace "initialized" message with structured server startup summary
+  * feat(fetcher): expand UA pool from 20 to 40 entries
+
+
 * 2026-03-23: v0.1.22 - Update .gitignore
   * chore(git): add uv.lock to .gitignore
 
