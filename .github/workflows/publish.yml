@@ -31,7 +31,7 @@ jobs:
         run: uv build
 
       - name: Publish to PyPI
-        run: uv run twine upload dist/*
+        run: uv run twine upload --skip-existing dist/*
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
