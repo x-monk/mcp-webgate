@@ -1,7 +1,13 @@
 # Changelog
 
+* 2026-03-24: v0.1.31 - Fix broken PyPI links and Windows build churn (Hannibal)
+  * fix(publish): add prep step to CI workflow — inject recent changes + rewrite relative README links before uv build
+  * chore(repo): add .gitattributes — force uv.lock to LF to prevent spurious dirty builds on Windows
+
 * 2026-03-24: v0.1.30 - Fix uv.lock line-ending churn on Windows (Hannibal)
   * chore(repo): add .gitattributes — force uv.lock to LF to prevent spurious dirty builds on Windows
+
+---
 
 * 2026-03-24: v0.1.29 - PyPI link fix and CI hardening (Hannibal)
   * fix(robot): rewrite relative README links to absolute GitHub URLs during PyPI build
@@ -11,6 +17,8 @@
   * fix(ci): install mcp-publisher from GitHub release binary
   * fix(ci): force Node.js 24 for actions; add watch to robot publish
 
+---
+
 * 2026-03-23: v0.1.28 - CI/CD publish pipeline (Hannibal)
   * feat(ci): add publish.yml workflow (workflow_dispatch: PyPI + MCP Registry)
   * feat(robot): integrate CI watch in promote (--batch to skip)
@@ -19,6 +27,7 @@
   * chore(robot): remove TestPyPI support (--test flag)
   * docs(contributing): update release workflow and CI/CD sections
 
+---
 
 * 2026-03-23: v0.1.27 - Package metadata and beta release
   * chore(meta): promote development status to Beta
@@ -28,6 +37,7 @@
   * docs(readme): add beta status section with feedback invitation
   * docs(github): add bug_report and feedback issue templates
 
+---
 
 * 2026-03-23: v0.1.25 - Code quality, performance, and documentation improvements
   * refactor(config): replace @field_validator boilerplate with Field constraints
@@ -43,6 +53,7 @@
   * docs(agent): add Claude CLI version compatibility note
   * docs(ide): simplify VSCode section
 
+---
 
 * 2026-03-23: v0.1.24 - Stronger tool instructions and documentation cleanup
   * feat(server): strengthen FastMCP instructions and onboarding to prevent native fetch fallback
@@ -51,6 +62,7 @@
   * docs(agent): add local models guidance pointing to README
   * docs: remove Table of Contents blocks and HTML anchors from all documentation files
 
+---
 
 * 2026-03-23: v0.1.23 - CI, dev tooling, and logging improvements
   * feat(ci): add GitHub Actions cross-platform test workflow (Ubuntu, Windows, macOS)
@@ -58,10 +70,12 @@
   * feat(logger): replace "initialized" message with structured server startup summary
   * feat(fetcher): expand UA pool from 20 to 40 entries
 
+---
 
 * 2026-03-23: v0.1.22 - Update .gitignore
   * chore(git): add uv.lock to .gitignore
 
+---
 
 * 2026-03-23: v0.1.21 - Build pipeline and publish fixes
   * fix(robot): promote now runs build+test; build now runs test before packaging
@@ -70,6 +84,7 @@
   * fix(build): inject Recent Changes table into README before PyPI build, restore after
   * chore(git): add .agent/, .claude/, .dev/ to .gitignore
 
+---
 
 * 2026-03-23: v0.1.20 - Add full source to version control
   * chore(git): track all source files — backends, scraper, llm, tools, utils, tests, docs
