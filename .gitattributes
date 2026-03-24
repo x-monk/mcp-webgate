@@ -1,0 +1,5 @@
+# Normalize line endings: store LF in repo, checkout as-is on all platforms
+* text=auto
+
+# Lock files: always LF — prevent uv build from seeing them as "modified" due to CRLF conversion
+uv.lock text eol=lf
