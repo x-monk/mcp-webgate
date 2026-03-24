@@ -175,6 +175,14 @@ def get_current_branch() -> str:
 # Commands
 # ---------------------------------------------------------------------------
 
+def cmd_prep(args: argparse.Namespace) -> None:
+    """Inject recent changes and rewrite relative links for PyPI — no restore (CI use)."""
+    info("Preparing README for PyPI …")
+    inject_recent_changes(4)
+    rewrite_relative_links_for_pypi()
+    info("README ready for PyPI build.")
+
+
 def cmd_test(args: argparse.Namespace) -> None:
     info("Running test suite …")
     run(["uv", "run", "python", "-m", "pytest", "-v"])
@@ -583,6 +591,7 @@ def main() -> None:
 
     sub.add_parser("test", help="Run the full test suite")
     sub.add_parser("build", help="Build PyPI wheel + sdist into dist/")
+    sub.add_parser("prep", help="Inject recent changes + rewrite README links for PyPI (CI use, no restore)")
 
     p_bump = sub.add_parser("bump", help="Bump version and commit on dev")
     p_bump.add_argument(
@@ -649,6 +658,7 @@ def main() -> None:
     dispatch = {
         "test": cmd_test,
         "build": cmd_build,
+        "prep": cmd_prep,
         "bump": cmd_bump,
         "install": cmd_install,
         "run": cmd_run,
