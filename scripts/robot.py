@@ -30,6 +30,7 @@ CHANGELOG = ROOT / "CHANGELOG.md"
 INIT = ROOT / "src" / "mcp_webgate" / "__init__.py"
 README = ROOT / "README.md"
 SERVER_JSON = ROOT / "server.json"
+GITHUB_REPO = "https://github.com/annibale-x/mcp-webgate"
 
 
 # ---------------------------------------------------------------------------
@@ -189,6 +190,7 @@ def cmd_build(args: argparse.Namespace) -> None:
         shutil.rmtree(dist)
     original_readme = inject_recent_changes(4)
     try:
+        rewrite_relative_links_for_pypi()
         run(["uv", "build"])
     finally:
         restore_readme(original_readme)
@@ -315,6 +317,21 @@ def get_version_on_branch(branch: str) -> str:
         return "(?)"
 
 
+def get_changelog_entry(version: str) -> tuple[str, str]:
+    """Return (title, notes) for the given version from CHANGELOG.md."""
+    text = CHANGELOG.read_text(encoding="utf-8")
+    pattern = rf"(\* \d{{4}}-\d{{2}}-\d{{2}}: v{re.escape(version)} - .+?)(?=\n\* \d{{4}}|\n---|\Z)"
+    m = re.search(pattern, text, re.DOTALL)
+    if not m:
+        return f"v{version}", ""
+    block = m.group(1).strip()
+    lines = block.splitlines()
+    title_m = re.search(rf"v{re.escape(version)} - (.+?)(?:\s*\(.*\))?$", lines[0])
+    title = title_m.group(1).strip() if title_m else f"v{version}"
+    notes = "\n".join(lines[1:]).strip()
+    return title, notes
+
+
 def get_changelog_titles(n: int = 3) -> list[str]:
     """Return the first n release title lines from CHANGELOG.md."""
     try:
@@ -351,6 +368,33 @@ def inject_recent_changes(n: int = 4) -> str:
 
 def restore_readme(original: str) -> None:
     README.write_text(original, encoding="utf-8")
+
+
+def rewrite_relative_links_for_pypi() -> None:
+    """Rewrite relative Markdown links to absolute GitHub URLs (in-place).
+
+    Relative links are valid on GitHub but broken on PyPI, which renders the
+    README as a standalone page with no knowledge of the repository layout.
+    """
+    text = README.read_text(encoding="utf-8")
+
+    def _abs(m: re.Match) -> str:
+        label, href = m.group(1), m.group(2)
+        # Leave absolute URLs, anchor-only links, and mailto untouched
+        if re.match(r"^https?://", href) or href.startswith("#") or href.startswith("mailto:"):
+            return m.group(0)
+        # Split path and optional anchor (#section)
+        path, anchor = (href.split("#", 1) + [""])[:2]
+        anchor = ("#" + anchor) if anchor else ""
+        # Directory links → /tree/; file links → /blob/
+        if path.endswith("/"):
+            abs_url = f"{GITHUB_REPO}/tree/main/{path.rstrip('/')}"
+        else:
+            abs_url = f"{GITHUB_REPO}/blob/main/{path}"
+        return f"[{label}]({abs_url}{anchor})"
+
+    patched = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", _abs, text)
+    README.write_text(patched, encoding="utf-8")
 
 
 def count_tests() -> int:
@@ -471,6 +515,28 @@ def cmd_query(args: argparse.Namespace) -> None:
     print(_json.dumps(result, ensure_ascii=False, indent=2))
 
 
+def _create_github_release(version: str, tag: str) -> None:
+    """Create a GitHub Release from the CHANGELOG entry (idempotent)."""
+    # Skip if release already exists
+    check = run(["gh", "release", "view", tag], capture=True, check=False)
+    if check.returncode == 0:
+        info(f"GitHub Release {tag} already exists, skipping.")
+        return
+
+    title, notes = get_changelog_entry(version)
+    info(f"Creating GitHub Release {tag} …")
+    cmd = ["gh", "release", "create", tag, "--title", f"{tag} - {title}", "--target", "main"]
+    if notes:
+        cmd += ["--notes", notes]
+    else:
+        cmd += ["--generate-notes"]
+    result = run(cmd, check=False)
+    if result.returncode == 0:
+        info(f"GitHub Release {tag} created.")
+    else:
+        info(f"Could not create GitHub Release. Create manually: gh release create {tag}")
+
+
 def cmd_publish(args: argparse.Namespace) -> None:
     version = read_version()
     tag = f"v{version}"
@@ -497,6 +563,7 @@ def cmd_publish(args: argparse.Namespace) -> None:
             pub = run(["gh", "run", "watch", run_id, "--exit-status"], check=False)
             if pub.returncode == 0:
                 info("Publish complete.")
+                _create_github_release(version, tag)
             else:
                 die("Publish workflow failed. Check: gh run view --log-failed")
         else:
