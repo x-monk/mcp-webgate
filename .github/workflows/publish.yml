@@ -27,6 +27,9 @@ jobs:
       - name: Run tests
         run: uv run pytest -v
 
+      - name: Prepare README for PyPI
+        run: python scripts/robot.py prep
+
       - name: Build distribution
         run: uv build
 
