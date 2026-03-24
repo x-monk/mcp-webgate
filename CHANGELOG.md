@@ -1,5 +1,13 @@
 # Changelog
 
+* 2026-03-24: v0.1.29 - PyPI link fix and CI hardening (Hannibal)
+  * fix(robot): rewrite relative README links to absolute GitHub URLs during PyPI build
+  * fix(ci): use PAT for mcp-publisher auth (GITHUB_TOKEN lacks read:user)
+  * fix(ci): run mcp-publisher login before publish
+  * fix(ci): skip existing PyPI releases on retry
+  * fix(ci): install mcp-publisher from GitHub release binary
+  * fix(ci): force Node.js 24 for actions; add watch to robot publish
+
 * 2026-03-23: v0.1.28 - CI/CD publish pipeline (Hannibal)
   * feat(ci): add publish.yml workflow (workflow_dispatch: PyPI + MCP Registry)
   * feat(robot): integrate CI watch in promote (--batch to skip)

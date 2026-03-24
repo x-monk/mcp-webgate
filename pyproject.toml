@@ -1,6 +1,6 @@
 [project]
 name = "mcp-webgate"
-version = "0.1.28"
+version = "0.1.29"
 description = "Web search that doesn't wreck your AI's memory."
 readme = "README.md"
 license = "MIT"
