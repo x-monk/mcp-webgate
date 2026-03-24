@@ -1,5 +1,8 @@
 # Changelog
 
+* 2026-03-24: v0.1.30 - Fix uv.lock line-ending churn on Windows (Hannibal)
+  * chore(repo): add .gitattributes — force uv.lock to LF to prevent spurious dirty builds on Windows
+
 * 2026-03-24: v0.1.29 - PyPI link fix and CI hardening (Hannibal)
   * fix(robot): rewrite relative README links to absolute GitHub URLs during PyPI build
   * fix(ci): use PAT for mcp-publisher auth (GITHUB_TOKEN lacks read:user)

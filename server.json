@@ -6,13 +6,13 @@
     "url": "https://github.com/annibale-x/mcp-webgate",
     "source": "github"
   },
-  "version": "0.1.29",
+  "version": "0.1.30",
   "packages": [
     {
       "registryType": "pypi",
       "registryBaseUrl": "https://pypi.org",
       "identifier": "mcp-webgate",
-      "version": "0.1.29",
+      "version": "0.1.30",
       "transport": {
         "type": "stdio"
       }
