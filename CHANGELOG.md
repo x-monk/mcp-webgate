@@ -1,7 +1,10 @@
 # Changelog
 
-* 2026-04-01: v0.1.32 - Update GitHub username from annibale-x to x-monk (Hannibal)
-  * chore(repo): update all GitHub URLs, manifest links, and documentation references to new username x-monk
+* 2026-04-02: v0.1.33 - Update remaining GitHub username references to x-hannibal (Hannibal)
+  * chore(repo): update remaining GitHub username references from x-monk to x-hannibal
+
+* 2026-04-01: v0.1.32 - Update GitHub username from annibale-x to x-hannibal (Hannibal)
+  * chore(repo): update all GitHub URLs, manifest links, and documentation references to new username x-hannibal
 
 * 2026-03-24: v0.1.31 - Fix broken PyPI links and Windows build churn (Hannibal)
   * fix(publish): add prep step to CI workflow — inject recent changes + rewrite relative README links before uv build
