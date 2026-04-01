@@ -1,18 +1,18 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.x-monk/mcp-webgate",
+  "name": "io.github.x-hannibal/mcp-webgate",
   "description": "Web search that doesn't wreck your AI's memory.",
   "repository": {
-    "url": "https://github.com/x-monk/mcp-webgate",
+    "url": "https://github.com/x-hannibal/mcp-webgate",
     "source": "github"
   },
-  "version": "0.1.32",
+  "version": "0.1.33",
   "packages": [
     {
       "registryType": "pypi",
       "registryBaseUrl": "https://pypi.org",
       "identifier": "mcp-webgate",
-      "version": "0.1.32",
+      "version": "0.1.33",
       "transport": {
         "type": "stdio"
       }

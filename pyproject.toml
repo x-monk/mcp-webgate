@@ -1,6 +1,6 @@
 [project]
 name = "mcp-webgate"
-version = "0.1.32"
+version = "0.1.33"
 description = "Web search that doesn't wreck your AI's memory."
 readme = "README.md"
 license = "MIT"
@@ -30,10 +30,10 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/x-monk/mcp-webgate"
-Repository = "https://github.com/x-monk/mcp-webgate"
-Issues = "https://github.com/x-monk/mcp-webgate/issues"
-Changelog = "https://github.com/x-monk/mcp-webgate/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/x-hannibal/mcp-webgate"
+Repository = "https://github.com/x-hannibal/mcp-webgate"
+Issues = "https://github.com/x-hannibal/mcp-webgate/issues"
+Changelog = "https://github.com/x-hannibal/mcp-webgate/blob/main/CHANGELOG.md"
 
 [project.scripts]
 mcp-webgate = "mcp_webgate.server:main"
