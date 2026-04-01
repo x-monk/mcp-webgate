@@ -1,5 +1,8 @@
 # Changelog
 
+* 2026-04-01: v0.1.32 - Update GitHub username from annibale-x to x-monk (Hannibal)
+  * chore(repo): update all GitHub URLs, manifest links, and documentation references to new username x-monk
+
 * 2026-03-24: v0.1.31 - Fix broken PyPI links and Windows build churn (Hannibal)
   * fix(publish): add prep step to CI workflow — inject recent changes + rewrite relative README links before uv build
   * chore(repo): add .gitattributes — force uv.lock to LF to prevent spurious dirty builds on Windows
