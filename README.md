@@ -3,8 +3,8 @@
 [![Python Version](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![MCP Protocol](https://img.shields.io/badge/MCP-Protocol-blueviolet)](https://spec.modelcontextprotocol.io/)
-[![Latest Release](https://img.shields.io/badge/release-v0.1.31-purple.svg)](https://github.com/annibale-x/mcp-webgate/releases/tag/v0.1.31)
-[![Beta](https://img.shields.io/badge/status-beta-orange.svg)](https://github.com/annibale-x/mcp-webgate/issues)
+[![Latest Release](https://img.shields.io/badge/release-v0.1.31-purple.svg)](https://github.com/x-monk/mcp-webgate/releases/tag/v0.1.31)
+[![Beta](https://img.shields.io/badge/status-beta-orange.svg)](https://github.com/x-monk/mcp-webgate/issues)
 
 Web search that doesn't wreck your AI's memory.
 
@@ -601,7 +601,7 @@ but the configuration API may still change before 1.0.
 **Feedback is very welcome.** If something doesn't work as expected, behaves oddly,
 or you have a use case that isn't covered:
 
-→ [Open an issue on GitHub](https://github.com/annibale-x/mcp-webgate/issues)
+→ [Open an issue on GitHub](https://github.com/x-monk/mcp-webgate/issues)
 
 Bug reports, configuration questions, and feature requests all help shape the roadmap.
 
@@ -620,13 +620,13 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 ## 🔗 Links
 
-- **[GitHub Repository](https://github.com/annibale-x/mcp-webgate)** — Source code and issues
+- **[GitHub Repository](https://github.com/x-monk/mcp-webgate)** — Source code and issues
 - **[PyPI Package](https://pypi.org/project/mcp-webgate/)** — Python Package Index
 - **[MCP Registry](https://registry.modelcontextprotocol.io/?q=mcp-webgate&all=1)** — Model Context Protocol Registry
 - **[MCP Protocol](https://modelcontextprotocol.io/specification/2025-11-25)** — Model Context Protocol specification
 
 ---
 
-**Need help?** Check the [documentation](docs/) or open an [issue](https://github.com/annibale-x/mcp-webgate/issues) on GitHub.
+**Need help?** Check the [documentation](docs/) or open an [issue](https://github.com/x-monk/mcp-webgate/issues) on GitHub.
 
-<!-- mcp-name: io.github.annibale-x/mcp-webgate -->
+<!-- mcp-name: io.github.x-monk/mcp-webgate -->

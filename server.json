@@ -1,9 +1,9 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.annibale-x/mcp-webgate",
+  "name": "io.github.x-monk/mcp-webgate",
   "description": "Web search that doesn't wreck your AI's memory.",
   "repository": {
-    "url": "https://github.com/annibale-x/mcp-webgate",
+    "url": "https://github.com/x-monk/mcp-webgate",
     "source": "github"
   },
   "version": "0.1.31",

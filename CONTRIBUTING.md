@@ -27,7 +27,7 @@ The core value proposition is **anti-context-flooding**: every result is truncat
 ## Setup
 
 ```bash
-git clone https://github.com/annibale-x/mcp-webgate.git
+git clone https://github.com/x-monk/mcp-webgate.git
 cd mcp-webgate
 uv sync
 ```

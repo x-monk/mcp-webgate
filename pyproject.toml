@@ -30,10 +30,10 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/annibale-x/mcp-webgate"
-Repository = "https://github.com/annibale-x/mcp-webgate"
-Issues = "https://github.com/annibale-x/mcp-webgate/issues"
-Changelog = "https://github.com/annibale-x/mcp-webgate/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/x-monk/mcp-webgate"
+Repository = "https://github.com/x-monk/mcp-webgate"
+Issues = "https://github.com/x-monk/mcp-webgate/issues"
+Changelog = "https://github.com/x-monk/mcp-webgate/blob/main/CHANGELOG.md"
 
 [project.scripts]
 mcp-webgate = "mcp_webgate.server:main"
